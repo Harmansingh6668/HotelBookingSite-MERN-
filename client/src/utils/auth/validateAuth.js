@@ -21,6 +21,7 @@ export function getRegisterErrors({
   lastName,
   email,
   password,
+  phone,
   confirmPassword,
   acceptedTerms,
 }) {
@@ -40,6 +41,10 @@ export function getRegisterErrors({
     errors.email = "Enter a valid email address.";
   }
 
+  if (!phone?.trim()) {
+    errors.phone = "Enter your phone number.";
+  }
+  
   if (!password) {
     errors.password = "Create a password.";
   } else if (password.length < 8) {
