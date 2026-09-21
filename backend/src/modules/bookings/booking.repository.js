@@ -45,7 +45,7 @@ const findBookingsByUserId = async (userId) => {
   })
     .populate(
       "hotelId",
-      "name city address images rating"
+      "name city address image rating"
     )
     .populate(
       "rooms.roomId",
@@ -70,7 +70,7 @@ const findBookingByIdAndUserId = async (
   })
     .populate(
       "hotelId",
-      "name city address images rating"
+      "name city address image rating"
     )
     .populate(
       "rooms.roomId",
