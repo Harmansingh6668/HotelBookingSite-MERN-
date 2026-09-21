@@ -6,6 +6,8 @@ const hotelRoutes = require("./modules/hotels/hotel.routes");
 const roomRoutes = require("./modules/rooms/room.routes");
 const bookingRoutes = require("./modules/bookings/booking.routes");
 const reviewRoutes = require("./modules/reviews/review.routes");
+//Admin
+const adminRoutes = require("./modules/admin/admin.routes");
 
 const errorMiddleware = require("./modules/middleware/error.middleware");
 
@@ -25,6 +27,8 @@ app.use("/api/hotels", hotelRoutes);
 app.use("/api/rooms", roomRoutes);
 app.use("/api/bookings", bookingRoutes);
 app.use("/api/reviews", reviewRoutes);
+//Admin routes
+app.use("/api/admin", adminRoutes);
 
 app.use(errorMiddleware);
 module.exports = app;

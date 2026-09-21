@@ -26,8 +26,14 @@ const userSchema = new mongoose.Schema(
         role: {
             type: String,
             enum:["CUSTOMER", "HOTEL_ADMIN", "SUPER_ADMIN"],
-            default: "CuSTOMER",
+            default: "CUSTOMER",
         },
+      
+hotelId: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: "Hotel",
+  default: null,
+},
         status: {
             type: String,
             enum: ["ACTIVE", "PENDING", "SUSPENDED"],
