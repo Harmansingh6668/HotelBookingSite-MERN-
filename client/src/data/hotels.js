@@ -58,7 +58,7 @@ const hotels = [
 ];
 
 export function getHotelById(id) {
-  return hotels.find((hotel) => hotel.id === id) || hotels[0];
+  return hotels.find((hotel) => hotel._id === id) || hotels[0];
 }
 
 export default hotels;

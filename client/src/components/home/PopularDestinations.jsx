@@ -22,6 +22,16 @@ const destinations = [
     image:
       "https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?auto=format&fit=crop&w=900&q=80",
   },
+  {
+    name: "Jaipur",
+    image:
+      "https://images.unsplash.com/photo-1477587458883-47145ed94245?auto=format&fit=crop&w=900&q=80",
+  },
+  {
+    name: "Mumbai",
+    image:
+      "https://images.unsplash.com/photo-1566552881560-0be862a7c445?auto=format&fit=crop&w=900&q=80",
+  },
 ];
 
 function PopularDestinations() {
@@ -37,7 +47,7 @@ function PopularDestinations() {
           From peaceful retreats to vibrant city hotels.
         </p>
 
-        <div className="mt-10 grid gap-5 md:grid-cols-2">
+        <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {destinations.map((destination) => (
             <DestinationCard
               key={destination.name}

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import Button from "../ui/Button";
 import MissingFieldsModal from "../missingModel/MissingFeildModal";
 import { useFormValidation } from "../missingModel/useFormValidation";
@@ -22,17 +22,18 @@ const addDays = (dateValue, days) => {
 
 function SearchBox() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { setSearch } = useBooking();
   const today = formatDateInput(new Date());
   const { missingFields, isModalOpen, closeModal, validateForm } =
     useFormValidation();
 
   const [searchData, setSearchData] = useState({
-    destination: "",
-    checkIn: "",
-    checkOut: "",
-    guests: 2,
-    rooms: 1,
+    destination: searchParams.get("destination") || "",
+    checkIn: searchParams.get("checkIn") || "",
+    checkOut: searchParams.get("checkOut") || "",
+    guests: Number(searchParams.get("adults") || searchParams.get("guests")) || 2,
+    rooms: Number(searchParams.get("rooms")) || 1,
   });
 
   const handleChange = (event) => {

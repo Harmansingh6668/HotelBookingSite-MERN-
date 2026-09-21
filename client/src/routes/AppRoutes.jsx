@@ -2,6 +2,7 @@ import { Routes, Route } from "react-router-dom"
 import MainLayout from "../components/layouts/MainLayout";
 import Home from "../pages/Home";
 import SearchResults from "../pages/SearchResults";
+import Hotels from "../pages/Hotels";
 import HotelDetails from "../pages/HotelDetails";
 import Booking from "../pages/Booking";
 import Payment from "../pages/Payment";
@@ -9,8 +10,10 @@ import BookingConfirmation from "../pages/BookingConfirmation";
 import MyBooking from "../pages/MyBooking";
 import Login from "../pages/Login";
 import Register from "../pages/Register";
-import ForgotPassword from "../pages/ForgotPassword";
-import VerifyOTP from "../pages/VerifyOTP";
+import Profile from "../pages/Profile";
+import Destinations from "../pages/Destinations";
+import InformationPage from "../pages/InformationPage";
+
 import ProtectedRoute from "../components/auth/ProtectedRoute";
 
 function AppRoutes() {
@@ -22,6 +25,11 @@ function AppRoutes() {
                 <Route 
                     path="/search" 
                     element={<SearchResults />}
+                />
+
+                <Route
+                    path="/hotels"
+                    element={<Hotels />}
                 />
 
                 <Route 
@@ -49,15 +57,25 @@ function AppRoutes() {
                     element={<ProtectedRoute><MyBooking /></ProtectedRoute>}
                 />
 
+                <Route
+                    path="/profile"
+                    element={<ProtectedRoute><Profile /></ProtectedRoute>}
+                />
+
                 <Route 
                     path="destinations"
-                    element={<div>destinations</div>}
+                    element={<Destinations />}
                 />
 
                 <Route 
                     path="offers"
                     element={<div>Offers</div>}
                 />
+                <Route path="help" element={<InformationPage type="help" />} />
+                <Route path="contact" element={<InformationPage type="contact" />} />
+                <Route path="cancellation" element={<InformationPage type="cancellation" />} />
+                <Route path="privacy" element={<InformationPage type="privacy" />} />
+                <Route path="terms" element={<InformationPage type="terms" />} />
             </Route>
 
             <Route 
@@ -70,15 +88,15 @@ function AppRoutes() {
                 element={<Register />}
             />
 
-            <Route
+            {/* <Route
                 path="/forgot-password"
                 element={<ForgotPassword />}
-            />
+            /> */}
 
-            <Route
+            {/* <Route
                 path="/verify-otp"
                 element={<VerifyOTP />}
-            />
+            /> */}
         </Routes>
     )
 }

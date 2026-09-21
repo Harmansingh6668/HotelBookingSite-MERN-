@@ -1,17 +1,29 @@
 import Container from "../ui/Container";
+import { Link } from "react-router-dom";
 
 const footerSections = [
   {
     title: "Explore",
-    links: ["Hotels", "Destinations", "Offers"],
+    links: [
+      { label: "Hotels", to: "/hotels" },
+      { label: "Destinations", to: "/destinations" },
+      { label: "Offers", to: "/offers" },
+    ],
   },
   {
     title: "Support",
-    links: ["Help Center", "Contact", "Cancellation"],
+    links: [
+      { label: "Help Center", to: "/help" },
+      { label: "Contact", to: "/contact" },
+      { label: "Cancellation", to: "/cancellation" },
+    ],
   },
   {
     title: "Legal",
-    links: ["Privacy", "Terms"],
+    links: [
+      { label: "Privacy", to: "/privacy" },
+      { label: "Terms", to: "/terms" },
+    ],
   },
 ];
 
@@ -38,13 +50,13 @@ function Footer() {
                 </h3>
                 <ul className="mt-4 space-y-3">
                   {section.links.map((link) => (
-                    <li key={link}>
-                      <a
+                    <li key={link.to}>
+                      <Link
                         className="text-sm text-[#E8EFEA] transition-colors hover:text-[#E6C77A]"
-                        href="#"
+                        to={link.to}
                       >
-                        {link}
-                      </a>
+                        {link.label}
+                      </Link>
                     </li>
                   ))}
                 </ul>

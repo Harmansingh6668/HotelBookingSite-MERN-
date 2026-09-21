@@ -3,9 +3,9 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import AuthInput from "../components/auth/AuthInput";
 import AuthLayout from "../components/auth/AuthLayout";
 import PasswordInput from "../components/auth/PasswordInput";
-import SocialLogin from "../components/auth/SocialLogin";
+// import SocialLogin from "../components/auth/SocialLogin";
 import Button from "../components/ui/Button";
-import { loginRequest, startGoogleAuth } from "../services/auth/authService";
+import { loginRequest } from "../services/auth/authService";
 import { getLoginErrors, hasErrors } from "../utils/auth/validateAuth";
 
 function Login() {
@@ -15,6 +15,9 @@ function Login() {
   const [errors, setErrors] = useState({});
   const [formError, setFormError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const registeredMessage = location.state?.registered
+    ? "Welcome to Aau Ji! Your account was created. Please sign in."
+    : "";
 
   const updateField = (event) => {
     const { name, value } = event.target;
@@ -31,12 +34,21 @@ function Login() {
 
     setIsSubmitting(true);
     try {
-      await loginRequest(form);
+      const session = await loginRequest(form);
       const from = location.state?.from;
       const redirectTo = from
         ? `${from.pathname}${from.search || ""}${from.hash || ""}`
         : "/";
-      navigate(redirectTo, { replace: true });
+      const userName =
+        session.user?.name ||
+        session.user?.firstName ||
+        form.email.trim();
+      navigate(redirectTo, {
+        replace: true,
+        state: {
+          welcomeMessage: `Welcome back, ${userName}!`,
+        },
+      });
     } catch (error) {
       setFormError(error.message || "Unable to sign in. Please try again.");
     } finally {
@@ -73,17 +85,22 @@ function Login() {
         />
 
         <div className="flex justify-end">
-          <Link
+          {/* <Link
             to="/forgot-password"
             className="text-sm font-medium text-[#0B4F3A] hover:text-[#083D2D] focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0B4F3A]"
           >
             Forgot password?
-          </Link>
+          </Link> */}
         </div>
 
         {formError ? (
           <p className="text-sm text-[#B64A4A]" role="alert">
             {formError}
+          </p>
+        ) : null}
+        {registeredMessage ? (
+          <p className="text-sm text-[#2F7D5A]" role="status">
+            {registeredMessage}
           </p>
         ) : null}
 
@@ -96,7 +113,7 @@ function Login() {
         </Button>
       </form>
 
-      <SocialLogin onGoogle={startGoogleAuth} disabled={isSubmitting} />
+      {/* <SocialLogin onGoogle={startGoogleAuth} disabled={isSubmitting} /> */}
 
       <p className="mt-6 text-center text-sm text-[#66736D]">
         New to Aau Ji?{" "}
