@@ -3,11 +3,11 @@ const express = require("express");
 const bookingController = require("./booking.controller");
 
 const authMiddleware = require("../middleware/auth.middleware");
+
 const allowRoles = require("../middleware/role.middleware");
 
 const router = express.Router();
 
-// Create booking
 router.post(
   "/",
   authMiddleware,
@@ -15,7 +15,6 @@ router.post(
   bookingController.createBooking
 );
 
-// Get customer's bookings
 router.get(
   "/my-bookings",
   authMiddleware,
@@ -23,7 +22,6 @@ router.get(
   bookingController.getMyBookings
 );
 
-// Get one booking
 router.get(
   "/:id",
   authMiddleware,
@@ -31,7 +29,6 @@ router.get(
   bookingController.getBooking
 );
 
-// Cancel booking
 router.patch(
   "/:id/cancel",
   authMiddleware,
