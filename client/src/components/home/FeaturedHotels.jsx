@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import Container from "../ui/Container";
 import HotelCard from "./HotelCard";
 
@@ -41,6 +42,7 @@ const hotels = [
 ];
 
 function FeaturedHotels() {
+  const navigate = useNavigate();
   return (
     <section className="bg-white py-20">
       <Container>
@@ -56,7 +58,7 @@ function FeaturedHotels() {
             </p>
           </div>
 
-          <button className="hidden text-sm font-semibold text-[#0B4F3A] hover:text-[#083D2D] sm:block">
+          <button className="hidden text-sm font-semibold text-[#0B4F3A] hover:text-[#083D2D] sm:block" onClick={() => navigate('/hotels')}>
             View all hotels →
           </button>
         </div>
@@ -64,7 +66,7 @@ function FeaturedHotels() {
         <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {hotels.map((hotel) => (
             <HotelCard
-              key={hotel.id}
+              key={hotel._id}
               hotel={hotel}
             />
           ))}

@@ -5,7 +5,7 @@ import AuthLayout from "../components/auth/AuthLayout";
 import PasswordInput from "../components/auth/PasswordInput";
 import SocialLogin from "../components/auth/SocialLogin";
 import Button from "../components/ui/Button";
-import { registerRequest, startGoogleAuth } from "../services/auth/authService";
+import { registerRequest } from "../services/auth/authService";
 import { getRegisterErrors, hasErrors } from "../utils/auth/validateAuth";
 
 function Register() {
@@ -14,6 +14,7 @@ function Register() {
     firstName: "",
     lastName: "",
     email: "",
+    phone: "",
     password: "",
     confirmPassword: "",
     acceptedTerms: false,
@@ -41,7 +42,15 @@ function Register() {
     setIsSubmitting(true);
     try {
       await registerRequest(form);
-      navigate("/verify-otp", { state: { email: form.email.trim() } });
+      navigate("/login", {
+        replace: true,
+        state: {
+          registered: true,
+          email: form.email.trim(),
+          welcomeMessage: `Welcome to Aau Ji, ${form.firstName.trim()}!`,
+        },
+      });
+      //navigate("/verify-otp", { state: { email: form.email.trim() } });
     } catch (error) {
       setFormError(error.message || "Unable to create your account. Please try again.");
     } finally {
@@ -90,6 +99,17 @@ function Register() {
           autoComplete="email"
           required
           error={errors.email}
+        />
+        <AuthInput
+          name="phone"
+          label="Phone number"
+          type="tel"
+          value={form.phone}
+          onChange={updateField}
+          placeholder="Enter phone number"
+          autoComplete="tel"
+          required
+          error={errors.phone}
         />
         <PasswordInput
           name="password"
@@ -147,7 +167,7 @@ function Register() {
         </Button>
       </form>
 
-      <SocialLogin onGoogle={startGoogleAuth} disabled={isSubmitting} />
+      {/* <SocialLogin onGoogle={startGoogleAuth} disabled={isSubmitting} /> */}
 
       <p className="mt-6 text-center text-sm text-[#66736D]">
         Already have an account?{" "}

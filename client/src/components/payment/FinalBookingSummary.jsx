@@ -2,7 +2,7 @@ function FinalBookingSummary({ booking }) {
   const selectedRooms = booking?.selectedRooms || [];
   const pricing = booking?.pricing || { roomSubtotal: 0, taxesAndFees: 0, total: 0 };
   const stay = booking?.stay || {};
-
+  console.log(selectedRooms)
   return (
     <aside className="h-fit space-y-6 lg:sticky lg:top-24">
       <section className="rounded-[16px] border border-[#DDE5DF] bg-white p-6 shadow-sm">
