@@ -5,19 +5,24 @@ const bookingRepository = require("./booking.repository");
 const Hotel = require("../hotels/hotel.model");
 const Room = require("../rooms/room.model");
 
+// --------------------------------
+// Create multiple-room booking
+// --------------------------------
+
 const createBooking = async ({
   userId,
-  roomId,
+  rooms,
   checkInDate,
   checkOutDate,
-  guests,
 }) => {
   // --------------------------------
-  // 1. Validate room ID
+  // 1. Validate rooms
   // --------------------------------
 
-  if (!mongoose.Types.ObjectId.isValid(roomId)) {
-    throw new Error("Invalid room ID");
+  if (!Array.isArray(rooms) || rooms.length === 0) {
+    throw new Error(
+      "At least one room must be selected"
+    );
   }
 
   // --------------------------------
@@ -31,7 +36,9 @@ const createBooking = async ({
     Number.isNaN(checkIn.getTime()) ||
     Number.isNaN(checkOut.getTime())
   ) {
-    throw new Error("Invalid check-in or check-out date");
+    throw new Error(
+      "Invalid check-in or check-out date"
+    );
   }
 
   if (checkOut <= checkIn) {
@@ -41,75 +48,7 @@ const createBooking = async ({
   }
 
   // --------------------------------
-  // 3. Validate guests
-  // --------------------------------
-
-  const numberOfGuests = Number(guests);
-
-  if (
-    !Number.isInteger(numberOfGuests) ||
-    numberOfGuests < 1
-  ) {
-    throw new Error(
-      "Number of guests must be at least 1"
-    );
-  }
-
-  // --------------------------------
-  // 4. Find room
-  // --------------------------------
-
-  const room = await Room.findOne({
-    _id: roomId,
-    status: "AVAILABLE",
-  });
-
-  if (!room) {
-    throw new Error("Room not found or unavailable");
-  }
-
-  // --------------------------------
-  // 5. Check room capacity
-  // --------------------------------
-
-  if (numberOfGuests > room.capacity) {
-    throw new Error(
-      `This room can accommodate maximum ${room.capacity} guests`
-    );
-  }
-
-  // --------------------------------
-  // 6. Find hotel
-  // --------------------------------
-
-  const hotel = await Hotel.findOne({
-    _id: room.hotelId,
-    status: "ACTIVE",
-  });
-
-  if (!hotel) {
-    throw new Error("Hotel not found or inactive");
-  }
-
-  // --------------------------------
-  // 7. Check room availability
-  // --------------------------------
-
-  const overlappingBooking =
-    await bookingRepository.findOverlappingBooking(
-      roomId,
-      checkIn,
-      checkOut
-    );
-
-  if (overlappingBooking) {
-    throw new Error(
-      "This room is already booked for the selected dates"
-    );
-  }
-
-  // --------------------------------
-  // 8. Calculate number of nights
+  // 3. Calculate nights
   // --------------------------------
 
   const millisecondsPerDay =
@@ -120,13 +59,177 @@ const createBooking = async ({
   );
 
   // --------------------------------
-  // 9. Calculate total amount
+  // 4. Find all selected rooms
   // --------------------------------
 
-  const pricePerNight = room.pricePerNight;
+  const roomIds = rooms.map(
+    (room) => room.roomId
+  );
 
-  const totalAmount =
-    pricePerNight * totalNights;
+  // Check duplicate room IDs
+  const uniqueRoomIds = new Set(
+    roomIds.map((id) => id.toString())
+  );
+
+  if (uniqueRoomIds.size !== roomIds.length) {
+    throw new Error(
+      "The same room cannot be selected twice"
+    );
+  }
+
+  // Validate ObjectIds
+  for (const roomId of roomIds) {
+    if (
+      !mongoose.Types.ObjectId.isValid(roomId)
+    ) {
+      throw new Error(
+        `Invalid room ID: ${roomId}`
+      );
+    }
+  }
+
+  const roomDocuments = await Room.find({
+    _id: {
+      $in: roomIds,
+    },
+    status: "AVAILABLE",
+  });
+
+  // --------------------------------
+  // 5. Check all rooms exist
+  // --------------------------------
+
+  if (roomDocuments.length !== roomIds.length) {
+    throw new Error(
+      "One or more selected rooms are unavailable"
+    );
+  }
+
+  // --------------------------------
+  // 6. Check all rooms belong
+  // to same hotel
+  // --------------------------------
+
+  const hotelIds = new Set(
+    roomDocuments.map((room) =>
+      room.hotelId.toString()
+    )
+  );
+
+  if (hotelIds.size !== 1) {
+    throw new Error(
+      "All rooms must belong to the same hotel"
+    );
+  }
+
+  const hotelId = roomDocuments[0].hotelId;
+
+  // --------------------------------
+  // 7. Find hotel
+  // --------------------------------
+
+  const hotel = await Hotel.findOne({
+    _id: hotelId,
+    status: "ACTIVE",
+  });
+
+  if (!hotel) {
+    throw new Error(
+      "Hotel not found or inactive"
+    );
+  }
+
+  // --------------------------------
+  // 8. Check each room
+  // --------------------------------
+
+  const bookingRooms = [];
+
+  for (const selectedRoom of rooms) {
+    const room = roomDocuments.find(
+      (roomDocument) =>
+        roomDocument._id.toString() ===
+        selectedRoom.roomId.toString()
+    );
+
+    if (!room) {
+      throw new Error(
+        "Selected room not found"
+      );
+    }
+
+    // ------------------------------
+    // Validate guests
+    // ------------------------------
+
+    const guests = Number(
+      selectedRoom.guests
+    );
+
+    if (
+      !Number.isInteger(guests) ||
+      guests < 1
+    ) {
+      throw new Error(
+        `Invalid guests for room ${room.roomNumber}`
+      );
+    }
+
+    // ------------------------------
+    // Check capacity
+    // ------------------------------
+
+    if (guests > room.capacity) {
+      throw new Error(
+        `Room ${room.roomNumber} can accommodate maximum ${room.capacity} guests`
+      );
+    }
+
+    // ------------------------------
+    // Check overlapping booking
+    // ------------------------------
+
+    const overlappingBooking =
+      await bookingRepository.findOverlappingBooking(
+        room._id,
+        checkIn,
+        checkOut
+      );
+
+    if (overlappingBooking) {
+      throw new Error(
+        `Room ${room.roomNumber} is already booked for the selected dates`
+      );
+    }
+
+    // ------------------------------
+    // Calculate room price
+    // ------------------------------
+
+    const pricePerNight =
+      room.pricePerNight;
+
+    const roomTotalAmount =
+      pricePerNight * totalNights;
+
+    bookingRooms.push({
+      roomId: room._id,
+      guests,
+      pricePerNight,
+      totalAmount: roomTotalAmount,
+    });
+  }
+
+  // --------------------------------
+  // 9. Calculate total booking price
+  // --------------------------------
+
+  const totalAmount = bookingRooms.reduce(
+    (total, room) => {
+      return total + room.totalAmount;
+    },
+    0
+  );
 
   // --------------------------------
   // 10. Create booking
@@ -135,25 +238,23 @@ const createBooking = async ({
   const booking =
     await bookingRepository.createBooking({
       userId,
-      hotelId: hotel._id,
-      roomId: room._id,
+
+      hotelId,
+
+      rooms: bookingRooms,
 
       checkInDate: checkIn,
+
       checkOutDate: checkOut,
 
-      guests: numberOfGuests,
-
-      pricePerNight,
       totalNights,
+
       totalAmount,
 
       status: "PENDING",
+
       paymentStatus: "PENDING",
     });
-
-  // --------------------------------
-  // 11. Return booking
-  // --------------------------------
 
   return booking;
 };
@@ -169,15 +270,21 @@ const getMyBookings = async (userId) => {
 };
 
 // --------------------------------
-// Get one customer booking
+// Get one booking
 // --------------------------------
 
 const getBookingById = async (
   bookingId,
   userId
 ) => {
-  if (!mongoose.Types.ObjectId.isValid(bookingId)) {
-    throw new Error("Invalid booking ID");
+  if (
+    !mongoose.Types.ObjectId.isValid(
+      bookingId
+    )
+  ) {
+    throw new Error(
+      "Invalid booking ID"
+    );
   }
 
   return await bookingRepository.findBookingByIdAndUserId(
@@ -194,8 +301,14 @@ const cancelBooking = async (
   bookingId,
   userId
 ) => {
-  if (!mongoose.Types.ObjectId.isValid(bookingId)) {
-    throw new Error("Invalid booking ID");
+  if (
+    !mongoose.Types.ObjectId.isValid(
+      bookingId
+    )
+  ) {
+    throw new Error(
+      "Invalid booking ID"
+    );
   }
 
   const booking =
@@ -205,11 +318,15 @@ const cancelBooking = async (
     );
 
   if (!booking) {
-    throw new Error("Booking not found");
+    throw new Error(
+      "Booking not found"
+    );
   }
 
   if (booking.status === "CANCELLED") {
-    throw new Error("Booking is already cancelled");
+    throw new Error(
+      "Booking is already cancelled"
+    );
   }
 
   if (booking.status === "COMPLETED") {

@@ -1,5 +1,35 @@
-
 const mongoose = require("mongoose");
+
+const bookingRoomSchema = new mongoose.Schema(
+  {
+    roomId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Room",
+      required: true,
+    },
+
+    guests: {
+      type: Number,
+      required: true,
+      min: 1,
+    },
+
+    pricePerNight: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+
+    totalAmount: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+  },
+  {
+    _id: false,
+  }
+);
 
 const bookingSchema = new mongoose.Schema(
   {
@@ -15,10 +45,15 @@ const bookingSchema = new mongoose.Schema(
       required: true,
     },
 
-    roomId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Room",
+    rooms: {
+      type: [bookingRoomSchema],
       required: true,
+      validate: {
+        validator: function (rooms) {
+          return rooms.length > 0;
+        },
+        message: "At least one room is required",
+      },
     },
 
     checkInDate: {
@@ -29,18 +64,6 @@ const bookingSchema = new mongoose.Schema(
     checkOutDate: {
       type: Date,
       required: true,
-    },
-
-    guests: {
-      type: Number,
-      required: true,
-      min: 1,
-    },
-
-    pricePerNight: {
-      type: Number,
-      required: true,
-      min: 0,
     },
 
     totalNights: {
@@ -63,7 +86,7 @@ const bookingSchema = new mongoose.Schema(
         "CANCELLED",
         "COMPLETED",
       ],
-      default: "CONFIRMED",
+      default: "PENDING",
     },
 
     paymentStatus: {
