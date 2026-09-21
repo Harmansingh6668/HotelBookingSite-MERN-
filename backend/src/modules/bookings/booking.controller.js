@@ -7,24 +7,26 @@ const bookingService = require("./booking.service");
 const createBooking = async (req, res) => {
   try {
     const {
-      roomId,
+      rooms,
       checkInDate,
       checkOutDate,
-      guests,
     } = req.body;
 
     const booking =
       await bookingService.createBooking({
         userId: req.user._id,
-        roomId,
+
+        rooms,
+
         checkInDate,
+
         checkOutDate,
-        guests,
       });
 
     return res.status(201).json({
       success: true,
-      message: "Booking created successfully",
+      message:
+        "Booking created successfully",
       booking,
     });
   } catch (error) {
@@ -48,8 +50,11 @@ const getMyBookings = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: "Bookings fetched successfully",
+      message:
+        "Bookings fetched successfully",
+
       count: bookings.length,
+
       bookings,
     });
   } catch (error) {
@@ -81,7 +86,9 @@ const getBooking = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: "Booking fetched successfully",
+      message:
+        "Booking fetched successfully",
+
       booking,
     });
   } catch (error) {
@@ -106,7 +113,9 @@ const cancelBooking = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: "Booking cancelled successfully",
+      message:
+        "Booking cancelled successfully",
+
       booking,
     });
   } catch (error) {

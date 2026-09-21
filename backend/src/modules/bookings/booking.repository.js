@@ -1,13 +1,17 @@
 const Booking = require("./booking.model");
 
-// Find overlapping booking for a room
+// --------------------------------
+// Find overlapping booking
+// for one room
+// --------------------------------
+
 const findOverlappingBooking = async (
   roomId,
   checkInDate,
   checkOutDate
 ) => {
   return await Booking.findOne({
-    roomId,
+    "rooms.roomId": roomId,
 
     status: {
       $in: ["PENDING", "CONFIRMED"],
@@ -23,12 +27,18 @@ const findOverlappingBooking = async (
   });
 };
 
+// --------------------------------
 // Create booking
+// --------------------------------
+
 const createBooking = async (bookingData) => {
   return await Booking.create(bookingData);
 };
 
-// Get all bookings of a customer
+// --------------------------------
+// Get customer's bookings
+// --------------------------------
+
 const findBookingsByUserId = async (userId) => {
   return await Booking.find({
     userId,
@@ -38,15 +48,18 @@ const findBookingsByUserId = async (userId) => {
       "name city address images rating"
     )
     .populate(
-      "roomId",
-      "roomNumber roomType pricePerNight images"
+      "rooms.roomId",
+      "roomNumber roomType pricePerNight images capacity"
     )
     .sort({
       createdAt: -1,
     });
 };
 
-// Find one booking belonging to a customer
+// --------------------------------
+// Find booking by ID
+// --------------------------------
+
 const findBookingByIdAndUserId = async (
   bookingId,
   userId
@@ -60,12 +73,15 @@ const findBookingByIdAndUserId = async (
       "name city address images rating"
     )
     .populate(
-      "roomId",
-      "roomNumber roomType pricePerNight images"
+      "rooms.roomId",
+      "roomNumber roomType pricePerNight images capacity"
     );
 };
 
+// --------------------------------
 // Update booking status
+// --------------------------------
+
 const updateBookingStatus = async (
   bookingId,
   userId,
