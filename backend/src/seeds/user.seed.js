@@ -4,6 +4,9 @@ const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 
 const User = require("../modules/users/user.model");
+const Hotel = require("../modules/hotels/hotel.model");
+
+const HOTEL_NAME = "Grand Palace Hotel";
 
 const users = [
   {
@@ -14,6 +17,7 @@ const users = [
     role: "CUSTOMER",
     status: "ACTIVE",
     emailVerified: true,
+    hotelId: null,
   },
 
   {
@@ -24,6 +28,7 @@ const users = [
     role: "HOTEL_ADMIN",
     status: "ACTIVE",
     emailVerified: true,
+    hotelId: null,
   },
 
   {
@@ -34,6 +39,7 @@ const users = [
     role: "SUPER_ADMIN",
     status: "ACTIVE",
     emailVerified: true,
+    hotelId: null,
   },
 ];
 
@@ -43,22 +49,52 @@ const seedUsers = async () => {
 
     console.log("MongoDB connected");
 
+    const hotel = await Hotel.findOne({
+      name: HOTEL_NAME,
+    }).select("_id");
+
+    if (!hotel) {
+      throw new Error(
+        `Hotel "${HOTEL_NAME}" not found. Run hotel.seed.js first.`
+      );
+    }
+
+    const hotelId = hotel._id;
+
     for (const user of users) {
-      // Check if user already exists
+      const hotelIdForUser = [
+        "HOTEL_ADMIN",
+        "SUPER_ADMIN",
+      ].includes(user.role)
+        ? hotelId
+        : null;
+
       const existingUser = await User.findOne({
         email: user.email,
       });
 
-      // If user exists, don't create again
+      // Update existing user
       if (existingUser) {
-        console.log(`${user.email} already exists`);
+        existingUser.name = user.name;
+        existingUser.phone = user.phone;
+        existingUser.role = user.role;
+        existingUser.status = user.status;
+        existingUser.emailVerified = user.emailVerified;
+        existingUser.hotelId = hotelIdForUser;
+
+        // Reset password
+        existingUser.passwordHash = await bcrypt.hash(user.password, 10);
+
+        await existingUser.save();
+
+        console.log(`${user.email} updated`);
         continue;
       }
 
-      // Hash password
+      // Hash password for new user
       const passwordHash = await bcrypt.hash(user.password, 10);
 
-      // Create user
+      // Create new user
       await User.create({
         name: user.name,
         email: user.email,
@@ -67,6 +103,7 @@ const seedUsers = async () => {
         role: user.role,
         status: user.status,
         emailVerified: user.emailVerified,
+        hotelId: hotelIdForUser,
       });
 
       console.log(`${user.email} created`);
@@ -77,6 +114,9 @@ const seedUsers = async () => {
     await mongoose.connection.close();
   } catch (error) {
     console.error("Seed failed:", error.message);
+
+    await mongoose.connection.close();
+
     process.exit(1);
   }
 };
