@@ -21,7 +21,7 @@ function Navbar() {
     },
     {
       name: "Hotels",
-      path: "/search",
+      path: "/hotels",
     },
     {
       name: "Destinations",
@@ -75,9 +75,15 @@ function Navbar() {
         <div className="hidden items-center gap-3 md:flex">
           {isAuthenticated ? (
             <>
-              <span className="max-w-32 truncate text-sm text-[#66736D]">
-                {user?.firstName || user?.email || "Account"}
+              <span className="hidden text-sm text-[#66736D] lg:inline">
+                Welcome, {user?.name || user?.firstName || "Account"}
               </span>
+              <Link
+                to="/profile"
+                className="rounded-[10px] border border-[#0B4F3A] px-4 py-2.5 text-sm font-medium text-[#0B4F3A]"
+              >
+                Profile
+              </Link>
               <button
                 type="button"
                 onClick={handleLogout}
@@ -136,13 +142,25 @@ function Navbar() {
 
             <div className="mt-4 flex gap-3">
               {isAuthenticated ? (
-                <button
-                  type="button"
-                  onClick={handleLogout}
-                  className="flex-1 rounded-[10px] border border-[#0B4F3A] px-4 py-2.5 text-center text-sm font-medium text-[#0B4F3A]"
-                >
-                  Sign out
-                </button>
+                <>
+                  <p className="w-full text-sm text-[#66736D]">
+                    Welcome, {user?.name || user?.firstName || "Account"}
+                  </p>
+                  <Link
+                    to="/profile"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="flex-1 rounded-[10px] border border-[#0B4F3A] px-4 py-2.5 text-center text-sm font-medium text-[#0B4F3A]"
+                  >
+                    Profile
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="flex-1 rounded-[10px] border border-[#0B4F3A] px-4 py-2.5 text-center text-sm font-medium text-[#0B4F3A]"
+                  >
+                    Sign out
+                  </button>
+                </>
               ) : (
                 <>
                   <Link

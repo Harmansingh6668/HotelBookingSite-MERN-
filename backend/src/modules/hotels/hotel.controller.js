@@ -18,6 +18,47 @@ const getHotels = async (req, res) => {
   }
 };
 
+const getHotelCount = async (req, res) => {
+  try {
+    const count = await hotelService.getActiveHotelCount();
+
+    return res.status(200).json({
+      success: true,
+      count,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+const searchHotels = async (req, res) => {
+  try {
+    const { destination, checkIn, checkOut, adults, rooms } = req.query;
+    const hotels = await hotelService.searchHotels(
+      destination,
+      checkIn,
+      checkOut,
+      adults,
+      rooms
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Available hotels fetched successfully",
+      count: hotels.length,
+      hotels,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 const getHotel = async (req, res) => {
   try {
     const hotel = await hotelService.getHotelById(
@@ -46,5 +87,7 @@ const getHotel = async (req, res) => {
 
 module.exports = {
   getHotels,
+  getHotelCount,
+  searchHotels,
   getHotel,
 };

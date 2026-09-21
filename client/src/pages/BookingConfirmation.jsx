@@ -27,9 +27,17 @@ function BookingConfirmation() {
         <div className="mx-auto max-w-2xl">
           <ConfirmationCard booking={booking} bookingId={bookingId} />
           <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-            <Link to={`/my-bookings/${bookingId}`} state={booking} className="flex-1 rounded-[10px] bg-[#0B4F3A] px-4 py-3 text-center text-sm font-medium text-white hover:bg-[#083D2D]">
-              View My Booking
+            <Link to="/profile" className="flex-1 rounded-[10px] bg-[#0B4F3A] px-4 py-3 text-center text-sm font-medium text-white hover:bg-[#083D2D]">
+              View Profile
             </Link>
+            {booking.bookingId && (
+              <Link
+                to={`/my-bookings/${booking.bookingId}`}
+                className="flex-1 rounded-[10px] border border-[#0B4F3A] bg-white px-4 py-3 text-center text-sm font-medium text-[#0B4F3A] hover:bg-[#F2F5F1]"
+              >
+                Manage Booking
+              </Link>
+            )}
             <Link to="/" className="flex-1 rounded-[10px] border border-[#DDE5DF] bg-white px-4 py-3 text-center text-sm font-medium text-[#1F2925] hover:bg-[#F2F5F1]">
               Back to Home
             </Link>

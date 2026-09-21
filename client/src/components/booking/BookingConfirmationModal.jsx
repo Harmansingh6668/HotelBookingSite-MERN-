@@ -64,7 +64,7 @@ function BookingConfirmationModal({
 
         <div className="mt-6 border-t border-[#DDE5DF] pt-6">
           <h3 className="font-semibold text-[#1F2925]">{hotel.name}</h3>
-          <p className="mt-1 text-sm text-[#66736D]">📍 {hotel.location}</p>
+          <p className="mt-1 text-sm text-[#66736D]">📍 {hotel.address}, {hotel.city}</p>
 
           <dl className="mt-6 grid gap-5 text-sm sm:grid-cols-2">
             <div>

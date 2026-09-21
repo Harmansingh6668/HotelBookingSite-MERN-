@@ -4,15 +4,15 @@ const TOKEN_KEY = "aauji_auth_token";
 const USER_KEY = "aauji_auth_user";
 
 const AUTH_ENDPOINTS = {
-  login: "/auth/login",
-  register: "/auth/register",
-  forgotPassword: "/auth/forgot-password",
-  verifyOtp: "/auth/verify-otp",
-  resendOtp: "/auth/resend-otp",
+  login: "/api/auth/login",
+  register: "/api/auth/register",
+  // forgotPassword: "/auth/forgot-password",
+  // verifyOtp: "/auth/verify-otp",
+  // resendOtp: "/auth/resend-otp",
 };
 
 const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api";
 
 function persistSession(payload = {}) {
   const token =
@@ -65,43 +65,43 @@ export async function loginRequest({ email, password }) {
   return persistSession(data);
 }
 
-export async function registerRequest({ firstName, lastName, email, password }) {
+export async function registerRequest({ firstName, lastName, email, password, phone }) {
   return apiClient(AUTH_ENDPOINTS.register, {
     method: "POST",
     body: JSON.stringify({
-      firstName: firstName.trim(),
-      lastName: lastName.trim(),
+      name: `${firstName.trim()} ${lastName.trim()}`,
       email: email.trim(),
       password,
+      phone: phone.trim(),
     }),
   });
 }
 
-export async function forgotPasswordRequest({ email }) {
-  return apiClient(AUTH_ENDPOINTS.forgotPassword, {
-    method: "POST",
-    body: JSON.stringify({ email: email.trim() }),
-  });
-}
+// export async function forgotPasswordRequest({ email }) {
+//   return apiClient(AUTH_ENDPOINTS.forgotPassword, {
+//     method: "POST",
+//     body: JSON.stringify({ email: email.trim() }),
+//   });
+// }
 
-export async function verifyOtpRequest({ email, otp }) {
-  const data = await apiClient(AUTH_ENDPOINTS.verifyOtp, {
-    method: "POST",
-    body: JSON.stringify({ email: email.trim(), otp }),
-  });
+// export async function verifyOtpRequest({ email, otp }) {
+//   const data = await apiClient(AUTH_ENDPOINTS.verifyOtp, {
+//     method: "POST",
+//     body: JSON.stringify({ email: email.trim(), otp }),
+//   });
 
-  return persistSession(data);
-}
+//   return persistSession(data);
+// }
 
-export async function resendOtpRequest({ email }) {
-  return apiClient(AUTH_ENDPOINTS.resendOtp, {
-    method: "POST",
-    body: JSON.stringify({ email: email.trim() }),
-  });
-}
+// export async function resendOtpRequest({ email }) {
+//   return apiClient(AUTH_ENDPOINTS.resendOtp, {
+//     method: "POST",
+//     body: JSON.stringify({ email: email.trim() }),
+//   });
+// }
 
-export function startGoogleAuth() {
-  window.location.href = `${API_BASE_URL}/auth/google`;
-}
+// export function startGoogleAuth() {
+//   window.location.href = `${API_BASE_URL}/auth/google`;
+// }
 
 export { AUTH_ENDPOINTS, TOKEN_KEY, USER_KEY };

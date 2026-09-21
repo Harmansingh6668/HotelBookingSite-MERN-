@@ -45,7 +45,7 @@ const getMyBookings = async (req, res) => {
   try {
     const bookings =
       await bookingService.getMyBookings(
-        req.user._id
+        req.user.id
       );
 
     return res.status(200).json({
@@ -74,7 +74,7 @@ const getBooking = async (req, res) => {
     const booking =
       await bookingService.getBookingById(
         req.params.id,
-        req.user._id
+        req.user.id
       );
 
     if (!booking) {
@@ -108,7 +108,7 @@ const cancelBooking = async (req, res) => {
     const booking =
       await bookingService.cancelBooking(
         req.params.id,
-        req.user._id
+        req.user.id
       );
 
     return res.status(200).json({
