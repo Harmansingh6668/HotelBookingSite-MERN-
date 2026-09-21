@@ -4,13 +4,19 @@ import Container from "../components/ui/Container";
 import PaymentProgress from "../components/payment/PaymentProgress";
 import PaymentMethod from "../components/payment/PaymentMethod";
 import FinalBookingSummary from "../components/payment/FinalBookingSummary";
+import { createBooking } from "../services/api/booking";
 
 function Payment() {
   const location = useLocation();
   const navigate = useNavigate();
   const booking = location.state;
   const [paymentMethod, setPaymentMethod] = useState("");
-  const paymentMethods = booking?.hotel?.paymentMethods || ["upi", "card", "netBanking"];
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState("");
+  const paymentMethods =
+    booking?.hotel?.paymentMethods?.length > 0
+      ? booking.hotel.paymentMethods
+      : ["upi", "card", "netBanking"];
 
   if (!booking) {
     return (
@@ -26,12 +32,40 @@ function Payment() {
     );
   }
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     if (!paymentMethod) return;
-    const bookingId = `AJ-${new Date().getFullYear()}-0001`;
-    navigate("/booking-confirmation", {
-      state: { ...booking, paymentMethod, bookingId },
-    });
+    const selectedRoom = booking.selectedRooms?.[0]?.room;
+    const stay = booking.stay || {};
+
+    if (!selectedRoom || !stay.checkIn || !stay.checkOut) {
+      setError("Room and stay dates are required to complete the booking.");
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      setError("");
+      const data = await createBooking({
+        roomId: selectedRoom.id || selectedRoom._id,
+        checkInDate: stay.checkIn,
+        checkOutDate: stay.checkOut,
+        guests: Number(stay.adults) || 1,
+      });
+
+      navigate("/booking-confirmation", {
+        replace: true,
+        state: {
+          ...booking,
+          paymentMethod,
+          bookingId: data.booking._id,
+          createdBooking: data.booking,
+        },
+      });
+    } catch (submitError) {
+      setError(submitError.message || "Unable to complete the booking.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -52,13 +86,14 @@ function Payment() {
               <p className="mt-6 rounded-[10px] bg-[#F2F5F1] p-3 text-xs leading-5 text-[#66736D]">
                 Payment availability and final charges are confirmed by the hotel booking system.
               </p>
+              {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
               <button
                 type="button"
                 onClick={handleContinue}
-                disabled={!paymentMethod}
+                disabled={!paymentMethod || isSubmitting}
                 className="mt-6 w-full rounded-[10px] bg-[#0B4F3A] px-4 py-3 text-sm font-medium text-white hover:bg-[#083D2D] disabled:cursor-not-allowed disabled:opacity-50"
               >
-                Continue
+                {isSubmitting ? "Completing booking..." : "Continue"}
               </button>
             </section>
             <FinalBookingSummary booking={booking} />

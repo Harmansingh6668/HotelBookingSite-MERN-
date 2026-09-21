@@ -1,12 +1,24 @@
 
 export const ENDPOINTS = {
-  hotels: "/hotels",
-  hotelById: (id) => `/hotels/${id}`,
+  hotels: "/api/hotels",
 
-  searchHotels: "/hotels/search",
+  hotelById: (id) => `/api/hotels/${id}`,
 
-  bookings: "/bookings",
-  bookingById: (id) => `/bookings/${id}`,
+  rooms: "/api/rooms",
 
-  payments: "/payments",
+  roomById: (id) => `/api/rooms/${id}`,
+
+  searchHotels: "/api/hotels/search",
+
+  bookings: "/api/bookings",
+
+  bookingById: (id) => `/api/bookings/${id}`,
+
+  reviews: "/api/reviews",
+
+  login: "/api/auth/login",
+
+  register: "/api/auth/register",
+
+  payments: "/api/payments",
 };

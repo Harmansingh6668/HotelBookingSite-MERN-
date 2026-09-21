@@ -3,49 +3,53 @@ import { Link, useSearchParams } from "react-router-dom";
 import SearchSidebar from "../components/search/SearchSidebar";
 import SearchSummary from "../components/search/SearchSummary";
 import SortDropdown from "../components/search/SortDropdown";
+import LoadingState from "../components/ui/LoadingState";
+import SearchBox from "../components/search/SearchBox";
 import { useBooking } from "../context/BookingContext";
-const hotels = [
-  {
-    id: "1",
-    name: "The Grand Amritsar",
-    location: "Amritsar, Punjab",
-    rating: 4.8,
-    price: 4299,
-    amenities: ["WiFi", "Pool", "Breakfast"],
-    image:
-      "https://images.unsplash.com/photo-1564501049412-61c2a3083791?auto=format&fit=crop&w=900&q=80",
-  },
-  {
-    id: "2",
-    name: "Golden Temple View",
-    location: "Amritsar, Punjab",
-    rating: 4.6,
-    price: 2899,
-    amenities: ["WiFi", "Parking", "Breakfast"],
-    image:
-      "https://images.unsplash.com/photo-1584132967334-10e028bd69f7?auto=format&fit=crop&w=900&q=80",
-  },
-  {
-    id: "3",
-    name: "Ramada by Wyndham Amritsar",
-    location: "Amritsar, Punjab",
-    rating: 4.7,
-    price: 5199,
-    amenities: ["WiFi", "Pool", "Parking"],
-    image:
-      "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?auto=format&fit=crop&w=900&q=80",
-  },
-  {
-    id: "4",
-    name: "Amritsar Heritage House",
-    location: "Amritsar, Punjab",
-    rating: 4.4,
-    price: 2199,
-    amenities: ["WiFi", "Breakfast"],
-    image:
-      "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=900&q=80",
-  },
-];
+import { getHotels, searchHotels } from "../services/api/hotels";
+// const hotels = [
+//   {
+//     id: "1",
+//     name: "The Grand Amritsar",
+//     location: "Amritsar, Punjab",
+//     rating: 4.8,
+//     price: 4299,
+//     amenities: ["WiFi", "Pool", "Breakfast"],
+//     image:
+//       "https://images.unsplash.com/photo-1564501049412-61c2a3083791?auto=format&fit=crop&w=900&q=80",
+//   },
+//   {
+//     id: "2",
+//     name: "Golden Temple View",
+//     location: "Amritsar, Punjab",
+//     rating: 4.6,
+//     price: 2899,
+//     amenities: ["WiFi", "Parking", "Breakfast"],
+//     image:
+//       "https://images.unsplash.com/photo-1584132967334-10e028bd69f7?auto=format&fit=crop&w=900&q=80",
+//   },
+//   {
+//     id: "3",
+//     name: "Ramada by Wyndham Amritsar",
+//     location: "Amritsar, Punjab",
+//     rating: 4.7,
+//     price: 5199,
+//     amenities: ["WiFi", "Pool", "Parking"],
+//     image:
+//       "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?auto=format&fit=crop&w=900&q=80",
+//   },
+//   {
+//     id: "4",
+//     name: "Amritsar Heritage House",
+//     location: "Amritsar, Punjab",
+//     rating: 4.4,
+//     price: 2199,
+//     amenities: ["WiFi", "Breakfast"],
+//     image:
+//       "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=900&q=80",
+//   },
+// ];
+
 
 const initialFilters = {
   maxPrice: 15000,
@@ -54,73 +58,15 @@ const initialFilters = {
 };
 
 function SearchHotelCard({ hotel, searchQuery }) {
-  const hotelLink = `/hotel/${hotel.id}${searchQuery ? `?${searchQuery}` : ""}`;
- const [searchParams] = useSearchParams();
-  const searchRequest = {
-  destination: searchParams.get("destination"),
-  checkIn: searchParams.get("checkIn"),
-  checkOut: searchParams.get("checkOut"),
-  adults: Number(searchParams.get("adults")) || 0,
-  children: Number(searchParams.get("children")) || 0,
-  rooms: Number(searchParams.get("rooms")) || 0,
-};
+  const hotelLink = `/hotel/${hotel._id}${searchQuery ? `?${searchQuery}` : ""}`;
+  const hotelImage = hotel.image?.[0] || hotel.image;
 
-  const [hotels, setHotels] = useState([]);
-const [loading, setLoading] = useState(true);
-const [error, setError] = useState(null);
-
-useEffect(() => {
-  const fetchHotels = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const data = await searchHotels(searchRequest);
-
-      setHotels(data);
-    } catch (error) {
-      setError(error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  fetchHotels();
-}, [
-  searchRequest.destination,
-  searchRequest.checkIn,
-  searchRequest.checkOut,
-  searchRequest.adults,
-  searchRequest.children,
-  searchRequest.rooms,
-]);
-
-if (loading) {
-  return (
-    <main className="bg-[#FAF8F2] py-12">
-      <Container>
-        <p className="text-[#66736D]">Searching hotels...</p>
-      </Container>
-    </main>
-  );
-}
-  if (error) {
-  return (
-    <main className="bg-[#FAF8F2] py-12">
-      <Container>
-        <p className="text-red-600">
-          {error}
-        </p>
-      </Container>
-    </main>
-  );
-}
   return (
     <article className="grid gap-5 rounded-[14px] border border-[#DDE5DF] bg-white p-4 transition-shadow hover:shadow-md sm:grid-cols-[190px_1fr]">
       <div className="h-44 overflow-hidden rounded-[10px] sm:h-full">
         <Link to={hotelLink}>
           <img
-            src={hotel.image}
+            src={hotelImage || "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=900&q=80"}
             alt={hotel.name}
             className="h-full w-full object-cover"
           />
@@ -138,17 +84,17 @@ if (loading) {
               ★ {hotel.rating}
             </span>
           </div>
-          <p className="mt-2 text-sm text-[#66736D]">📍 {hotel.location}</p>
+          <p className="mt-2 text-sm text-[#66736D]">📍 {hotel.address}, {hotel.city}</p>
           <p className="mt-4 text-sm text-[#66736D]">
-            {hotel.amenities.join(" · ")}
+            {hotel.amenities?.join(" · ")}
           </p>
         </div>
 
         <div className="mt-6 flex flex-wrap items-end justify-between gap-4">
-          <p className="text-xl font-semibold text-[#1F2925]">
+          {/* <p className="text-xl font-semibold text-[#1F2925]">
             ₹{hotel.price.toLocaleString("en-IN")}
             <span className="text-sm font-normal text-[#66736D]"> / night</span>
-          </p>
+          </p> */}
           <Link
             to={hotelLink}
             className="rounded-[10px] bg-[#0B4F3A] px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#083D2D]"
@@ -167,11 +113,41 @@ function SearchResults() {
   const searchQuery = searchParams.toString();
   const [sort, setSort] = useState("recommended");
   const [filters, setFilters] = useState(initialFilters);
+  const [hotels, setHotels] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const destination = searchParams.get("destination");
   const checkIn = searchParams.get("checkIn");
   const checkOut = searchParams.get("checkOut");
   const adults = searchParams.get("adults") || searchParams.get("guests") || "2";
   const rooms = searchParams.get("rooms") || "1";
+
+  useEffect(() => {
+    const fetchHotels = async () => {
+      try {
+        setLoading(true);
+        setError("");
+        const request = {
+          destination: destination || "",
+          checkIn: checkIn || "",
+          checkOut: checkOut || "",
+          adults,
+          rooms,
+        };
+        const data =
+          checkIn && checkOut
+            ? await searchHotels(request)
+            : await getHotels();
+        setHotels(data.hotels || []);
+      } catch (fetchError) {
+        setError(fetchError.message || "Unable to load hotels.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchHotels();
+  }, [adults, checkIn, checkOut, destination, rooms]);
 
   useEffect(() => {
     setSearch({
@@ -186,21 +162,27 @@ function SearchResults() {
   const filteredHotels = useMemo(
     () =>
       hotels.filter((hotel) => {
-        const matchesPrice = hotel.price <= filters.maxPrice;
+        const destinationQuery = destination?.trim().toLowerCase() || "";
+        const matchesDestination =
+          !destinationQuery ||
+          hotel.name?.toLowerCase().includes(destinationQuery) ||
+          hotel.city?.toLowerCase().includes(destinationQuery) ||
+          hotel.address?.toLowerCase().includes(destinationQuery);
+        //const matchesPrice = hotel.price <= filters.maxPrice;
         const matchesRating =
           !filters.rating || hotel.rating >= Number(filters.rating.replace("+", ""));
         const matchesAmenities = filters.amenities.every((amenity) =>
-          hotel.amenities.includes(amenity)
+          hotel.amenities?.includes(amenity)
         );
 
-        return matchesPrice && matchesRating && matchesAmenities;
+        return matchesDestination && matchesRating && matchesAmenities;
       }),
-    [filters]
+    [destination, filters, hotels]
   );
 
   const sortedHotels = useMemo(() => {
     const result = [...filteredHotels];
-    if (sort === "price-low") return result.sort((a, b) => a.price - b.price);
+    //if (sort === "price-low") return result.sort((a, b) => a.price - b.price);
     if (sort === "price-high") return result.sort((a, b) => b.price - a.price);
     if (sort === "rating") return result.sort((a, b) => b.rating - a.rating);
     return result;
@@ -222,6 +204,11 @@ function SearchResults() {
 
   return (
     <div className="min-h-screen bg-[#FAF8F2]">
+      <div className="border-b border-[#DDE5DF] bg-white">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <SearchBox />
+        </div>
+      </div>
       <SearchSummary
         destination={destination}
         checkIn={checkIn}
@@ -239,18 +226,20 @@ function SearchResults() {
           />
 
           <main>
-            <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
+            {loading && <LoadingState message="Searching hotels..." />}
+            {error && <p className="text-red-600">{error}</p>}
+            {!loading && !error && <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
               <h2 className="text-xl font-semibold text-[#1F2925]">
                 {sortedHotels.length} hotels found
               </h2>
               <SortDropdown value={sort} onChange={setSort} />
-            </div>
+            </div>}
 
-            <div className="space-y-5">
+            {!loading && !error && <div className="space-y-5">
               {sortedHotels.length > 0 ? (
                 sortedHotels.map((hotel) => (
                   <SearchHotelCard
-                    key={hotel.id}
+                    key={hotel._id}
                     hotel={hotel}
                     searchQuery={searchQuery}
                   />
@@ -266,6 +255,7 @@ function SearchResults() {
                 </div>
               )}
             </div>
+            }
           </main>
         </div>
       </div>

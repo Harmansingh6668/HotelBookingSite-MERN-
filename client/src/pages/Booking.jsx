@@ -11,19 +11,27 @@ function Booking() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const routeBooking = location.state;
+  const routeStay = routeBooking?.stay || {};
+  const routeSelectedRooms = routeBooking?.selectedRooms || [];
+  const contextSelectedRooms = contextBooking.selectedRooms || [];
+  const selectedRoomsWithDetails = routeSelectedRooms.some(
+    (selection) => selection.room
+  )
+    ? routeSelectedRooms
+    : contextSelectedRooms;
   const booking = {
     ...routeBooking,
     ...contextBooking,
     hotel: contextBooking.hotel || routeBooking?.hotel,
-    selectedRooms:
-      contextBooking.selectedRooms.length > 0
-        ? contextBooking.selectedRooms
-        : routeBooking?.selectedRooms || [],
+    selectedRooms: selectedRoomsWithDetails,
     pricing: contextBooking.pricing || routeBooking?.pricing,
   };
   const search = {
-    ...routeBooking?.stay,
-    ...contextBooking.search,
+    destination: contextBooking.search.destination || routeStay.destination || "",
+    checkIn: contextBooking.search.checkIn || routeStay.checkIn || "",
+    checkOut: contextBooking.search.checkOut || routeStay.checkOut || "",
+    adults: contextBooking.search.adults || routeStay.adults || "2",
+    rooms: contextBooking.search.rooms || routeStay.rooms || "1",
   };
   const selectedRooms = useMemo(
     () =>
