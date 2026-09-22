@@ -13,8 +13,8 @@ const router = express.Router();
 router.get(
   "/dashboard",
   authMiddleware,
-  allowRoles("HOTEL_ADMIN", "SUPER_ADMIN"),
-  adminController.getHotel
+  allowRoles("HOTEL_ADMIN"),
+  adminController.getDashboard
 );
 
 // Get hotel
