@@ -1,8 +1,36 @@
 const adminService = require("./admin.service");
 
+
+// --------------------------------
+// Dashboard
+// --------------------------------
+
+const getDashboard = async (req, res) => {
+  try {
+    const dashboard =
+      await adminService.getDashboard(req.user);
+
+    return res.status(200).json({
+      success: true,
+      dashboard,
+    });
+  } catch (error) {
+    return res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+
+// --------------------------------
+// Get hotel
+// --------------------------------
+
 const getHotel = async (req, res) => {
   try {
-    const hotel = await adminService.getHotel(req.user);
+    const hotel =
+      await adminService.getHotel(req.user);
 
     return res.status(200).json({
       success: true,
@@ -16,12 +44,18 @@ const getHotel = async (req, res) => {
   }
 };
 
+
+// --------------------------------
+// Update hotel
+// --------------------------------
+
 const updateHotel = async (req, res) => {
   try {
-    const hotel = await adminService.updateHotel(
-      req.user,
-      req.body
-    );
+    const hotel =
+      await adminService.updateHotel(
+        req.user,
+        req.body
+      );
 
     return res.status(200).json({
       success: true,
@@ -36,7 +70,9 @@ const updateHotel = async (req, res) => {
   }
 };
 
+
 module.exports = {
+    getDashboard,
   getHotel,
   updateHotel,
 };
