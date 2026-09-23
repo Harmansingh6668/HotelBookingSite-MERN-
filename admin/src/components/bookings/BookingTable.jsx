@@ -97,11 +97,19 @@ function BookingTable({ bookings }) {
                 {/* Room */}
                 <td className="px-5 py-4">
                   <p className="text-sm font-medium text-[var(--color-text-primary)]">
-                    Room {booking.roomNumber}
+                    {booking.rooms?.length > 0
+                      ? booking.rooms
+                          .map((room) => `Room ${room.roomNumber}`)
+                          .join(", ")
+                      : "Room Not available"}
                   </p>
 
                   <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
-                    {booking.roomType}
+                    {booking.rooms?.length > 0
+                      ? booking.rooms
+                          .map((room) => room.roomType)
+                          .join(", ")
+                      : "Not available"}
                   </p>
                 </td>
 
@@ -124,7 +132,7 @@ function BookingTable({ bookings }) {
                 {/* Amount */}
                 <td className="px-5 py-4">
                   <p className="text-sm font-semibold text-[var(--color-text-primary)]">
-                    ₹{booking.amount.toLocaleString("en-IN")}
+                    ₹{booking.totalAmount.toLocaleString("en-IN")}
                   </p>
                 </td>
 
@@ -209,7 +217,14 @@ function BookingTable({ bookings }) {
                 </p>
 
                 <p className="mt-1 text-sm font-medium text-[var(--color-text-primary)]">
-                  {booking.roomNumber} · {booking.roomType}
+                  {booking.rooms?.length > 0
+                    ? booking.rooms
+                        .map(
+                          (room) =>
+                            `${room.roomNumber} · ${room.roomType}`
+                        )
+                        .join(", ")
+                    : "Not available"}
                 </p>
               </div>
 
@@ -219,7 +234,7 @@ function BookingTable({ bookings }) {
                 </p>
 
                 <p className="mt-1 text-sm font-semibold text-[var(--color-text-primary)]">
-                  ₹{booking.amount.toLocaleString("en-IN")}
+                  ₹{booking.totalAmount.toLocaleString("en-IN")}
                 </p>
               </div>
             </div>

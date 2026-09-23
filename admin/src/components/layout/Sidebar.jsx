@@ -1,4 +1,6 @@
 import { NavLink } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { useAdminAuth } from "../../context/AdminAuthContext";
 
 import {
   LayoutDashboard,
@@ -22,7 +24,7 @@ const navigation = [
       {
         label: "Dashboard",
         icon: LayoutDashboard,
-        path: "/",
+        path: "/dashboard",
       },
     ],
   },
@@ -94,6 +96,15 @@ const navigation = [
 ];
 
 function Sidebar({ isOpen, onClose }) {
+  const navigate = useNavigate();
+  const { logout } = useAdminAuth();
+
+  const handleLogout = () => {
+    logout();
+    onClose();
+    navigate("/login", { replace: true });
+  };
+
   return (
     <>
       {/* Mobile overlay */}
@@ -182,6 +193,7 @@ function Sidebar({ isOpen, onClose }) {
         <div className="border-t border-[var(--color-border)] p-4">
           <button
             type="button"
+            onClick={handleLogout}
             className="
               flex w-full items-center gap-3 rounded-[10px]
               px-3 py-2.5

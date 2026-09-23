@@ -87,6 +87,7 @@ const loginUser = async ({ email, password }) => {
       email: user.email,
       phone: user.phone,
       role: user.role,
+      hotelId: user.hotelId,
       status: user.status,
       emailVerified: user.emailVerified,
     },

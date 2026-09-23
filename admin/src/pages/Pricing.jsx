@@ -1,48 +1,40 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Pencil, IndianRupee, TrendingUp } from "lucide-react";
-
-const initialPricing = [
-  {
-    id: 1,
-    roomType: "Deluxe",
-    rooms: 12,
-    basePrice: 3500,
-    weekendPrice: 4000,
-    status: "ACTIVE",
-  },
-  {
-    id: 2,
-    roomType: "Premium",
-    rooms: 8,
-    basePrice: 5200,
-    weekendPrice: 5800,
-    status: "ACTIVE",
-  },
-  {
-    id: 3,
-    roomType: "Suite",
-    rooms: 6,
-    basePrice: 6500,
-    weekendPrice: 7200,
-    status: "ACTIVE",
-  },
-  {
-    id: 4,
-    roomType: "Standard",
-    rooms: 6,
-    basePrice: 2500,
-    weekendPrice: 2900,
-    status: "ACTIVE",
-  },
-];
+import { getAdminRooms, updateAdminRoom } from "../services/room.service";
 
 function Pricing() {
-  const [pricing, setPricing] = useState(initialPricing);
+  const [pricing, setPricing] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [editingId, setEditingId] = useState(null);
   const [editValues, setEditValues] = useState({
     basePrice: "",
     weekendPrice: "",
   });
+
+  useEffect(() => {
+    const fetchPricing = async () => {
+      try {
+        const data = await getAdminRooms();
+        setPricing(
+          (data.rooms || []).map((room) => ({
+            id: room._id,
+            roomType: room.roomType || "Not available",
+            rooms: 1,
+            basePrice: room.pricePerNight || 0,
+            weekendPrice: room.pricePerNight || 0,
+            status: room.status || "Not available",
+          }))
+        );
+      } catch (fetchError) {
+        setError(fetchError.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPricing();
+  }, []);
 
   const startEditing = (room) => {
     setEditingId(room.id);
@@ -62,28 +54,27 @@ function Pricing() {
     });
   };
 
-  const savePricing = (id) => {
-    setPricing((currentPricing) =>
-      currentPricing.map((room) =>
-        room.id === id
-          ? {
-              ...room,
-              basePrice: Number(editValues.basePrice),
-              weekendPrice: Number(editValues.weekendPrice),
-            }
-          : room
-      )
-    );
+  const savePricing = async (id) => {
+    try {
+      const data = await updateAdminRoom(id, {
+        pricePerNight: Number(editValues.basePrice) || 0,
+      });
 
-    console.log("Updated pricing:", {
-      id,
-      basePrice: Number(editValues.basePrice),
-      weekendPrice: Number(editValues.weekendPrice),
-    });
-
-    // PATCH /api/rooms/:id/pricing later
-
-    cancelEditing();
+      setPricing((currentPricing) =>
+        currentPricing.map((room) =>
+          room.id === id
+            ? {
+                ...room,
+                basePrice: data.room?.pricePerNight || 0,
+                weekendPrice: data.room?.pricePerNight || 0,
+              }
+            : room
+        )
+      );
+      cancelEditing();
+    } catch (saveError) {
+      setError(saveError.message);
+    }
   };
 
   return (
@@ -104,6 +95,12 @@ function Pricing() {
             Manage room rates for your hotel.
           </p>
         </div>
+
+        {error && (
+          <p className="text-sm text-[var(--color-danger)]">
+            Unable to load or update pricing: {error}
+          </p>
+        )}
       </div>
 
       {/* Info Banner */}
@@ -138,7 +135,7 @@ function Pricing() {
           </p>
 
           <p className="mt-2 text-2xl font-semibold">
-            {pricing.length}
+            {new Set(pricing.map((room) => room.roomType)).size}
           </p>
         </div>
 
@@ -148,7 +145,7 @@ function Pricing() {
           </p>
 
           <p className="mt-2 text-2xl font-semibold">
-            {pricing.reduce((total, room) => total + room.rooms, 0)}
+            {pricing.length}
           </p>
         </div>
 
@@ -163,7 +160,7 @@ function Pricing() {
               pricing.reduce(
                 (total, room) => total + room.basePrice,
                 0
-              ) / pricing.length
+              ) / (pricing.length || 1)
             ).toLocaleString("en-IN")}
           </p>
         </div>
@@ -221,7 +218,7 @@ function Pricing() {
 
             <tbody>
 
-              {pricing.map((room) => {
+              {!loading && pricing.map((room) => {
 
                 const isEditing = editingId === room.id;
 
@@ -360,6 +357,17 @@ function Pricing() {
                   </tr>
                 );
               })}
+
+              {loading && (
+                <tr>
+                  <td
+                    colSpan="6"
+                    className="px-6 py-10 text-center text-sm text-[var(--color-text-secondary)]"
+                  >
+                    Loading pricing...
+                  </td>
+                </tr>
+              )}
 
             </tbody>
 

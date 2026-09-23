@@ -1,59 +1,7 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Search, Eye, Users } from "lucide-react";
 import { Link } from "react-router-dom";
-
-const mockGuests = [
-  {
-    id: 1,
-    name: "Harpreet Singh",
-    email: "harpreet@example.com",
-    phone: "+91 98765 43210",
-    bookings: 4,
-    lastStay: "Sep 21, 2026",
-    totalSpent: 28500,
-    status: "CURRENT",
-  },
-  {
-    id: 2,
-    name: "Simran Kaur",
-    email: "simran@example.com",
-    phone: "+91 98123 45678",
-    bookings: 2,
-    lastStay: "Sep 22, 2026",
-    totalSpent: 19500,
-    status: "CURRENT",
-  },
-  {
-    id: 3,
-    name: "Aman Sharma",
-    email: "aman@example.com",
-    phone: "+91 99887 66554",
-    bookings: 3,
-    lastStay: "Aug 18, 2026",
-    totalSpent: 17000,
-    status: "PREVIOUS",
-  },
-  {
-    id: 4,
-    name: "Navneet Gill",
-    email: "navneet@example.com",
-    phone: "+91 98712 33445",
-    bookings: 1,
-    lastStay: "Sep 18, 2026",
-    totalSpent: 10400,
-    status: "PREVIOUS",
-  },
-  {
-    id: 5,
-    name: "Riya Kapoor",
-    email: "riya@example.com",
-    phone: "+91 98989 11223",
-    bookings: 5,
-    lastStay: "Sep 26, 2026",
-    totalSpent: 42000,
-    status: "UPCOMING",
-  },
-];
+import { getAdminBookings } from "../services/booking.service";
 
 function getStatusClasses(status) {
   const styles = {
@@ -66,11 +14,72 @@ function getStatusClasses(status) {
 }
 
 function Guests() {
+  const [guests, setGuests] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("All");
 
+  useEffect(() => {
+    const fetchGuests = async () => {
+      try {
+        const data = await getAdminBookings();
+        const guestMap = new Map();
+        const now = new Date();
+
+        (data.bookings || []).forEach((booking) => {
+          const user = booking.userId;
+          if (!user?._id) return;
+
+          const checkout = new Date(booking.checkOutDate);
+          const checkin = new Date(booking.checkInDate);
+          const bookingStatus =
+            checkin > now
+              ? "UPCOMING"
+              : checkout >= now
+                ? "CURRENT"
+                : "PREVIOUS";
+          const existing = guestMap.get(user._id);
+
+          if (existing) {
+            existing.bookings += 1;
+            existing.totalSpent += booking.totalAmount || 0;
+            if (checkout > existing.lastStayDate) {
+              existing.lastStayDate = checkout;
+              existing.lastStay = checkout.toLocaleDateString("en-IN");
+              existing.status = bookingStatus;
+            }
+            return;
+          }
+
+          guestMap.set(user._id, {
+            id: user._id,
+            name: user.name || "Not available",
+            email: user.email || "Not available",
+            phone: user.phone || "Not available",
+            bookings: 1,
+            lastStay: Number.isNaN(checkout.getTime())
+              ? "Not available"
+              : checkout.toLocaleDateString("en-IN"),
+            lastStayDate: checkout,
+            totalSpent: booking.totalAmount || 0,
+            status: bookingStatus,
+          });
+        });
+
+        setGuests([...guestMap.values()]);
+      } catch (fetchError) {
+        setError(fetchError.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchGuests();
+  }, []);
+
   const filteredGuests = useMemo(() => {
-    return mockGuests.filter((guest) => {
+    return guests.filter((guest) => {
       const searchMatch =
         guest.name.toLowerCase().includes(search.toLowerCase()) ||
         guest.email.toLowerCase().includes(search.toLowerCase()) ||
@@ -81,7 +90,7 @@ function Guests() {
 
       return searchMatch && statusMatch;
     });
-  }, [search, status]);
+  }, [guests, search, status]);
 
   return (
     <div className="space-y-6">
@@ -121,7 +130,7 @@ function Guests() {
           </div>
 
           <p className="mt-3 text-2xl font-semibold">
-            128
+            {guests.length || 0}
           </p>
         </div>
 
@@ -131,7 +140,7 @@ function Guests() {
           </p>
 
           <p className="mt-3 text-2xl font-semibold">
-            12
+            {guests.filter((guest) => guest.status === "CURRENT").length || 0}
           </p>
         </div>
 
@@ -141,9 +150,15 @@ function Guests() {
           </p>
 
           <p className="mt-3 text-2xl font-semibold">
-            34
+            {guests.filter((guest) => guest.bookings > 1).length || 0}
           </p>
         </div>
+
+        {error && (
+          <p className="text-sm text-[var(--color-danger)]">
+            Unable to load guests: {error}
+          </p>
+        )}
 
       </div>
 
@@ -224,7 +239,7 @@ function Guests() {
             </thead>
 
             <tbody>
-              {filteredGuests.map((guest) => (
+              {!loading && filteredGuests.map((guest) => (
                 <tr
                   key={guest.id}
                   className="border-b border-[var(--color-border)] last:border-0 hover:bg-[var(--color-surface-muted)]/50"
@@ -284,6 +299,13 @@ function Guests() {
 
                 </tr>
               ))}
+              {loading && (
+                <tr>
+                  <td colSpan="7" className="px-6 py-10 text-center text-sm text-[var(--color-text-secondary)]">
+                    Loading guests...
+                  </td>
+                </tr>
+              )}
             </tbody>
 
           </table>
@@ -295,7 +317,7 @@ function Guests() {
       {/* Mobile Cards */}
       <div className="space-y-3 md:hidden">
 
-        {filteredGuests.map((guest) => (
+        {!loading && filteredGuests.map((guest) => (
           <div
             key={guest.id}
             className="rounded-2xl border border-[var(--color-border)] bg-white p-4"
