@@ -34,10 +34,10 @@ function Payment() {
 
   const handleContinue = async () => {
     if (!paymentMethod) return;
-    const selectedRoom = booking.selectedRooms?.[0]?.room;
+    const selectedRooms = booking.selectedRooms || [];
     const stay = booking.stay || {};
 
-    if (!selectedRoom || !stay.checkIn || !stay.checkOut) {
+    if (!selectedRooms.length || !stay.checkIn || !stay.checkOut) {
       setError("Room and stay dates are required to complete the booking.");
       return;
     }
@@ -45,11 +45,14 @@ function Payment() {
     try {
       setIsSubmitting(true);
       setError("");
+      const guests = Number(stay.adults) || 1;
       const data = await createBooking({
-        roomId: selectedRoom.id || selectedRoom._id,
+        rooms: selectedRooms.map(({ room }) => ({
+          roomId: room.id || room._id,
+          guests,
+        })),
         checkInDate: stay.checkIn,
         checkOutDate: stay.checkOut,
-        guests: Number(stay.adults) || 1,
       });
 
       navigate("/booking-confirmation", {
