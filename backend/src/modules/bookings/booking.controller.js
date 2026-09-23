@@ -6,6 +6,13 @@ const bookingService = require("./booking.service");
 
 const createBooking = async (req, res) => {
   try {
+    if (!req.user?._id) {
+      return res.status(401).json({
+        success: false,
+        message: "Authenticated user ID is required",
+      });
+    }
+
     const {
       rooms,
       checkInDate,
@@ -45,7 +52,7 @@ const getMyBookings = async (req, res) => {
   try {
     const bookings =
       await bookingService.getMyBookings(
-        req.user.id
+        req.user._id
       );
 
     return res.status(200).json({
@@ -74,7 +81,7 @@ const getBooking = async (req, res) => {
     const booking =
       await bookingService.getBookingById(
         req.params.id,
-        req.user.id
+        req.user._id
       );
 
     if (!booking) {
@@ -108,7 +115,7 @@ const cancelBooking = async (req, res) => {
     const booking =
       await bookingService.cancelBooking(
         req.params.id,
-        req.user.id
+        req.user._id
       );
 
     return res.status(200).json({

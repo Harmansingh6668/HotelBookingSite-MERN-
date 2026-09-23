@@ -12,16 +12,23 @@ const authMiddleware = async (req, res, next) => {
       });
     }
 
-    const parts = authHeader.split(" ");
+    const parts = authHeader.trim().split(/\s+/);
 
-    if (parts.length !== 2 || parts[0] !== "Bearer") {
+    if (parts.length !== 2 || parts[0].toLowerCase() !== "bearer") {
       return res.status(401).json({
         success: false,
         message: "Invalid authorization format",
       });
     }
 
-    const token = parts[1];
+    const token = parts[1].replace(/^['"]|['"]$/g, "");
+
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication token is required",
+      });
+    }
 
     const decoded = jwt.verify(
       token,
@@ -45,12 +52,8 @@ const authMiddleware = async (req, res, next) => {
     }
 
     req.user = {
-<<<<<<< Updated upstream
       _id: user._id,
       id: user._id,
-=======
-      id: user.id,
->>>>>>> Stashed changes
       name: user.name,
       email: user.email,
       phone: user.phone,

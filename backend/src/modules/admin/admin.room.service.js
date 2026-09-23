@@ -1,18 +1,24 @@
 const Room = require("../rooms/room.model");
 
+// --------------------------------
+// Get all rooms
+// --------------------------------
+
 const getRooms = async (user) => {
   if (!user.hotelId) {
     throw new Error("Hotel is not assigned to this admin");
   }
 
-  const rooms = await Room.find({
+  return await Room.find({
     hotelId: user.hotelId,
   }).sort({
-    roomNumber: 1,
+    createdAt: -1,
   });
-
-  return rooms;
 };
+
+// --------------------------------
+// Get room by ID
+// --------------------------------
 
 const getRoomById = async (user, roomId) => {
   if (!user.hotelId) {
@@ -31,35 +37,40 @@ const getRoomById = async (user, roomId) => {
   return room;
 };
 
+// --------------------------------
+// Create room
+// --------------------------------
+
 const createRoom = async (user, roomData) => {
   if (!user.hotelId) {
     throw new Error("Hotel is not assigned to this admin");
   }
 
+  // Check duplicate room number
   const existingRoom = await Room.findOne({
     hotelId: user.hotelId,
     roomNumber: roomData.roomNumber,
   });
 
   if (existingRoom) {
-    throw new Error("Room number already exists in this hotel");
+    throw new Error(
+      "Room number already exists in this hotel"
+    );
   }
 
   const room = await Room.create({
+    ...roomData,
+
+    // Never trust hotelId from frontend
     hotelId: user.hotelId,
-    roomNumber: roomData.roomNumber,
-    roomType: roomData.roomType,
-    description: roomData.description,
-    pricePerNight: roomData.pricePerNight,
-    amenities: roomData.amenities || [],
-    capacity: roomData.capacity,
-    bedType: roomData.bedType,
-    images: roomData.images || [],
-    status: roomData.status || "AVAILABLE",
   });
 
   return room;
 };
+
+// --------------------------------
+// Update room
+// --------------------------------
 
 const updateRoom = async (user, roomId, roomData) => {
   if (!user.hotelId) {
@@ -75,6 +86,7 @@ const updateRoom = async (user, roomId, roomData) => {
     throw new Error("Room not found");
   }
 
+  // Room number
   if (roomData.roomNumber !== undefined) {
     const existingRoom = await Room.findOne({
       hotelId: user.hotelId,
@@ -83,40 +95,50 @@ const updateRoom = async (user, roomId, roomData) => {
     });
 
     if (existingRoom) {
-      throw new Error("Room number already exists in this hotel");
+      throw new Error(
+        "Room number already exists in this hotel"
+      );
     }
 
     room.roomNumber = roomData.roomNumber;
   }
 
+  // Room type
   if (roomData.roomType !== undefined) {
     room.roomType = roomData.roomType;
   }
 
+  // Description
   if (roomData.description !== undefined) {
     room.description = roomData.description;
   }
 
+  // Price
   if (roomData.pricePerNight !== undefined) {
     room.pricePerNight = roomData.pricePerNight;
   }
 
+  // Amenities
   if (roomData.amenities !== undefined) {
     room.amenities = roomData.amenities;
   }
 
+  // Capacity
   if (roomData.capacity !== undefined) {
     room.capacity = roomData.capacity;
   }
 
+  // Bed type
   if (roomData.bedType !== undefined) {
     room.bedType = roomData.bedType;
   }
 
+  // Images
   if (roomData.images !== undefined) {
     room.images = roomData.images;
   }
 
+  // Status
   if (roomData.status !== undefined) {
     room.status = roomData.status;
   }
@@ -125,6 +147,10 @@ const updateRoom = async (user, roomId, roomData) => {
 
   return room;
 };
+
+// --------------------------------
+// Delete room
+// --------------------------------
 
 const deleteRoom = async (user, roomId) => {
   if (!user.hotelId) {

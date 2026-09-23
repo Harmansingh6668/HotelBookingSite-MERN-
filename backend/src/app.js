@@ -9,6 +9,8 @@ const reviewRoutes = require("./modules/reviews/review.routes");
 //Admin
 const adminRoutes = require("./modules/admin/admin.routes");
 
+const superAdminRoutes = require("./modules/super-admin/super-admin.routes");
+
 const errorMiddleware = require("./modules/middleware/error.middleware");
 
 const app = express();
@@ -33,6 +35,7 @@ app.use("/api/bookings", bookingRoutes);
 app.use("/api/reviews", reviewRoutes);
 //Admin routes
 app.use("/api/admin", adminRoutes);
+app.use("/api/super-admin", superAdminRoutes);
 
 app.use(errorMiddleware);
 module.exports = app;

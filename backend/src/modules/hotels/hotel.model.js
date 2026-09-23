@@ -11,6 +11,7 @@ const hotelSchema = new mongoose.Schema(
         type: String,
         required: true,
         trim: true,
+          default: "",
     },
     address: {
         type: String,
@@ -55,6 +56,10 @@ const hotelSchema = new mongoose.Schema(
         enum: ["ACTIVE", "INACTIVE"],
         default: "ACTIVE",
     },
+    profileCompleted: {
+  type: Boolean,
+  default: false,
+},
 },
 {timestamps: true}
 );      
