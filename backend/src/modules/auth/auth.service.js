@@ -10,7 +10,8 @@ const registerUser = async ({ name, email, password, phone }) => {
   const existingUser = await authRepository.findUserByEmail(
     normalizedEmail
   );
-
+    
+  
   if (existingUser) {
     throw new Error("User with this email already exists");
   }

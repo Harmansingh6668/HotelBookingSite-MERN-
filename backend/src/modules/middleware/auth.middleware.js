@@ -45,8 +45,12 @@ const authMiddleware = async (req, res, next) => {
     }
 
     req.user = {
+<<<<<<< Updated upstream
       _id: user._id,
       id: user._id,
+=======
+      id: user.id,
+>>>>>>> Stashed changes
       name: user.name,
       email: user.email,
       phone: user.phone,
