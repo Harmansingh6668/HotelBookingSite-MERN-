@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ChevronLeft,
   ChevronRight,
@@ -28,7 +28,6 @@ const STATUS_OPTIONS = [
   "Available",
   "Booked",
   "Maintenance",
-  "Unavailable",
 ];
 
 const initialRooms = [
@@ -154,12 +153,47 @@ function getMonthLabel(dates) {
 }
 
 function AvailabilityGrid({
+  rooms: backendRooms = [],
   currentWeek = 0,
   roomType = "All",
   status = "All",
   setCurrentWeek,
 }) {
-  const [rooms, setRooms] = useState(initialRooms);
+  const [rooms, setRooms] = useState(
+    backendRooms.length
+      ? backendRooms.map((room) => ({
+          id: room._id,
+          number: String(room.roomNumber ?? 0),
+          type: room.roomType || "Not available",
+          availability: Array(7).fill(
+            ({
+              AVAILABLE: "Available",
+              BOOKED: "Booked",
+              OCCUPIED: "Booked",
+              MAINTENANCE: "Maintenance",
+            }[String(room.status || "").toUpperCase()]) || "Unavailable"
+          ),
+        }))
+      : initialRooms
+  );
+
+  useEffect(() => {
+    if (backendRooms.length) {
+      setRooms(backendRooms.map((room) => ({
+        id: room._id,
+        number: String(room.roomNumber ?? 0),
+        type: room.roomType || "Not available",
+        availability: Array(7).fill(
+          ({
+            AVAILABLE: "Available",
+            BOOKED: "Booked",
+            OCCUPIED: "Booked",
+            MAINTENANCE: "Maintenance",
+          }[String(room.status || "").toUpperCase()]) || "Unavailable"
+        ),
+      })));
+    }
+  }, [backendRooms]);
 
   const [selectedCell, setSelectedCell] = useState(null);
 

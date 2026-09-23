@@ -1,15 +1,23 @@
 import { useNavigate } from "react-router-dom";
 import RoomForm from "../components/rooms/RoomForm";
+import { createAdminRoom } from "../services/room.service";
 
 function AddRoom() {
   const navigate = useNavigate();
 
-  const handleAddRoom = (roomData) => {
-    console.log("New room:", roomData);
-
-    // Backend integration will be added later.
-    // POST /api/rooms
-    const id = `new-${Date.now()}`;
+  const handleAddRoom = async (roomData) => {
+    const { room } = await createAdminRoom({
+      roomNumber: roomData.roomNumber,
+      roomType: roomData.roomType.toUpperCase(),
+      description: roomData.description,
+      capacity: Number(roomData.capacity),
+      pricePerNight: Number(roomData.price),
+      bedType: roomData.bedType.toUpperCase().replace(" BED", "").replace(" BEDS", ""),
+      status: roomData.status.toUpperCase().replace(" ", "_"),
+      amenities: roomData.amenities,
+      images: roomData.images,
+    });
+    const id = room._id;
 
     navigate(`/rooms/${id}`, {
       replace: true,

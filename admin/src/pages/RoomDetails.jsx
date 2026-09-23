@@ -12,6 +12,7 @@ import {
   Tv,
   Coffee,
 } from "lucide-react";
+import { getAdminRoomById } from "../services/room.service";
 
 const roomData = {
   number: "204",
@@ -49,15 +50,40 @@ function RoomDetails() {
   const [notification, setNotification] = useState(
     location.state?.notification || ""
   );
-  const incomingAmenities = location.state?.room?.amenities;
+  const [fetchedRoom, setFetchedRoom] = useState(null);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
+  const incomingAmenities = fetchedRoom?.amenities || location.state?.room?.amenities;
   const detailAmenities = Array.isArray(incomingAmenities)
-    ? incomingAmenities.map((name) => ({ name, icon: Wifi }))
+    ? incomingAmenities.map((amenity) => ({
+        name: typeof amenity === "string" ? amenity : amenity.name,
+        icon: Wifi,
+      }))
     : roomData.amenities;
   const displayedRoom = {
     ...roomData,
     ...location.state?.room,
+    ...(fetchedRoom
+      ? {
+          number: fetchedRoom.roomNumber,
+          type: fetchedRoom.roomType,
+          description: fetchedRoom.description,
+          capacity: fetchedRoom.capacity,
+          price: fetchedRoom.pricePerNight,
+          status: fetchedRoom.status,
+          bed: fetchedRoom.bedType,
+          amenities: fetchedRoom.amenities,
+        }
+      : {}),
     amenities: detailAmenities,
   };
+
+  useEffect(() => {
+    getAdminRoomById(id)
+      .then(({ room }) => setFetchedRoom(room))
+      .catch((fetchError) => setError(fetchError.message))
+      .finally(() => setLoading(false));
+  }, [id]);
 
   useEffect(() => {
     if (!notification) return undefined;
@@ -68,6 +94,11 @@ function RoomDetails() {
 
     return () => window.clearTimeout(timeoutId);
   }, [notification]);
+
+  if (loading) return <p className="text-sm text-[var(--color-text-secondary)]">Loading room...</p>;
+  if (error && !location.state?.room) {
+    return <p className="text-sm text-[var(--color-danger)]">Unable to load room: {error}</p>;
+  }
 
   return (
     <div className="mx-auto max-w-[1200px]">
@@ -131,7 +162,9 @@ function RoomDetails() {
               capacity: displayedRoom.capacity,
               price: displayedRoom.price,
               bedType: displayedRoom.bed,
-              status: displayedRoom.status,
+              status: String(displayedRoom.status || "AVAILABLE")
+                .toLowerCase()
+                .replace(/(^|_)\w/g, (match) => match.replace("_", "").toUpperCase()),
               amenities: displayedRoom.amenities.map((amenity) => amenity.name),
               images: [],
             },

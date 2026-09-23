@@ -12,96 +12,29 @@ import {
   Users,
   Wrench,
 } from "lucide-react";
-import { useState } from "react";
-
-const rooms = [
-  {
-    id: 1,
-    number: "101",
-    type: "Deluxe Room",
-    capacity: 2,
-    price: 3500,
-    status: "Available",
-  },
-  {
-    id: 2,
-    number: "102",
-    type: "Deluxe Room",
-    capacity: 2,
-    price: 3500,
-    status: "Occupied",
-  },
-  {
-    id: 3,
-    number: "103",
-    type: "Deluxe Room",
-    capacity: 2,
-    price: 3500,
-    status: "Available",
-  },
-  {
-    id: 4,
-    number: "201",
-    type: "Suite",
-    capacity: 4,
-    price: 6500,
-    status: "Available",
-  },
-  {
-    id: 5,
-    number: "202",
-    type: "Suite",
-    capacity: 4,
-    price: 6500,
-    status: "Occupied",
-  },
-  {
-    id: 6,
-    number: "301",
-    type: "Premium Room",
-    capacity: 3,
-    price: 5200,
-    status: "Maintenance",
-  },
-  {
-    id: 7,
-    number: "302",
-    type: "Premium Room",
-    capacity: 3,
-    price: 5200,
-    status: "Available",
-  },
-  {
-    id: 8,
-    number: "303",
-    type: "Premium Room",
-    capacity: 3,
-    price: 5200,
-    status: "Unavailable",
-  },
-];
+import { useEffect, useState } from "react";
+import { getAdminRooms } from "../services/room.service";
 
 const statusStyles = {
-  Available: {
+  AVAILABLE: {
     badge: "bg-[#EAF5EF] text-[var(--color-success)]",
     dot: "bg-[var(--color-success)]",
   },
-  Occupied: {
+  BOOKED: {
     badge: "bg-[#EDF4F7] text-[var(--color-info)]",
     dot: "bg-[var(--color-info)]",
   },
-  Maintenance: {
+  MAINTENANCE: {
     badge: "bg-[#FFF6E5] text-[var(--color-warning)]",
     dot: "bg-[var(--color-warning)]",
-  },
-  Unavailable: {
-    badge: "bg-[#FBEDED] text-[var(--color-danger)]",
-    dot: "bg-[var(--color-danger)]",
   },
 };
 
 function StatusBadge({ status }) {
-  const style = statusStyles[status];
+  const style = statusStyles[status] || {
+    badge: "bg-[var(--color-surface-muted)] text-[var(--color-text-secondary)]",
+    dot: "bg-[var(--color-text-muted)]",
+  };
 
   return (
     <span
@@ -142,9 +75,36 @@ function SummaryCard({ icon: Icon, label, value, description, iconClass }) {
 }
 
 function Rooms() {
+  const [rooms, setRooms] = useState([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [typeFilter, setTypeFilter] = useState("All");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const fetchRooms = async () => {
+      try {
+        const data = await getAdminRooms();
+        setRooms(
+          (data.rooms || []).map((room) => ({
+            id: room._id,
+            number: String(room.roomNumber),
+            type: room.roomType,
+            capacity: room.capacity,
+            price: room.pricePerNight,
+            status: room.status,
+          }))
+        );
+      } catch (fetchError) {
+        setError(fetchError.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRooms();
+  }, []);
 
   const filteredRooms = rooms.filter((room) => {
     const matchesSearch =
@@ -159,6 +119,9 @@ function Rooms() {
 
     return matchesSearch && matchesStatus && matchesType;
   });
+  const availableRoomTypes = [
+    ...new Set(rooms.map((room) => room.type).filter(Boolean)),
+  ];
 
   return (
     <div className="mx-auto max-w-[1500px]">
@@ -188,11 +151,17 @@ function Rooms() {
       </div>
 
       {/* Summary */}
+      {error && (
+        <p className="mt-6 text-sm text-[var(--color-danger)]">
+          Unable to load rooms: {error}
+        </p>
+      )}
+
       <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <SummaryCard
           icon={BedDouble}
           label="Total Rooms"
-          value="32"
+          value={rooms.length}
           description="Property"
           iconClass="bg-[var(--color-surface-muted)] text-[var(--color-primary)]"
         />
@@ -200,7 +169,7 @@ function Rooms() {
         <SummaryCard
           icon={CheckCircle2}
           label="Available"
-          value="18"
+          value={rooms.filter((room) => room.status === "AVAILABLE").length}
           description="Today"
           iconClass="bg-[#EAF5EF] text-[var(--color-success)]"
         />
@@ -208,7 +177,7 @@ function Rooms() {
         <SummaryCard
           icon={Users}
           label="Occupied"
-          value="10"
+          value={rooms.filter((room) => room.status === "BOOKED").length}
           description="Today"
           iconClass="bg-[#EDF4F7] text-[var(--color-info)]"
         />
@@ -216,7 +185,7 @@ function Rooms() {
         <SummaryCard
           icon={Wrench}
           label="Maintenance"
-          value="2"
+          value={rooms.filter((room) => room.status === "MAINTENANCE").length}
           description="Currently"
           iconClass="bg-[#FFF6E5] text-[var(--color-warning)]"
         />
@@ -273,10 +242,9 @@ function Rooms() {
                   "
                 >
                   <option value="All">All Status</option>
-                  <option value="Available">Available</option>
-                  <option value="Occupied">Occupied</option>
-                  <option value="Maintenance">Maintenance</option>
-                  <option value="Unavailable">Unavailable</option>
+                  <option value="AVAILABLE">Available</option>
+                  <option value="BOOKED">Booked</option>
+                  <option value="MAINTENANCE">Maintenance</option>
                 </select>
               </div>
 
@@ -293,9 +261,11 @@ function Rooms() {
                 "
               >
                 <option value="All">All Room Types</option>
-                <option value="Deluxe Room">Deluxe Room</option>
-                <option value="Premium Room">Premium Room</option>
-                <option value="Suite">Suite</option>
+                {availableRoomTypes.map((type) => (
+                  <option key={type} value={type}>
+                    {type}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
@@ -333,7 +303,7 @@ function Rooms() {
             </thead>
 
             <tbody>
-              {filteredRooms.map((room) => (
+              {!loading && filteredRooms.map((room) => (
                 <tr
                   key={room.id}
                   className="border-b border-[var(--color-border)] last:border-0 hover:bg-[var(--color-surface-muted)]/50"
@@ -386,7 +356,13 @@ function Rooms() {
             </tbody>
           </table>
 
-          {filteredRooms.length === 0 && (
+          {loading && (
+            <div className="px-6 py-12 text-center text-sm text-[var(--color-text-secondary)]">
+              Loading rooms...
+            </div>
+          )}
+
+          {!loading && filteredRooms.length === 0 && (
             <div className="px-6 py-12 text-center">
               <p className="text-sm font-medium text-[var(--color-text-primary)]">
                 No rooms found
@@ -401,7 +377,7 @@ function Rooms() {
 
         {/* Mobile cards */}
         <div className="divide-y divide-[var(--color-border)] md:hidden">
-          {filteredRooms.map((room) => (
+          {!loading && filteredRooms.map((room) => (
             <div key={room.id} className="p-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3">
@@ -464,7 +440,13 @@ function Rooms() {
             </div>
           ))}
 
-          {filteredRooms.length === 0 && (
+          {loading && (
+            <div className="px-6 py-12 text-center text-sm text-[var(--color-text-secondary)]">
+              Loading rooms...
+            </div>
+          )}
+
+          {!loading && filteredRooms.length === 0 && (
             <div className="px-6 py-12 text-center">
               <p className="text-sm font-medium text-[var(--color-text-primary)]">
                 No rooms found

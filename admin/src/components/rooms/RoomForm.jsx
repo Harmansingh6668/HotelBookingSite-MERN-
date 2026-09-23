@@ -2,9 +2,9 @@ import { useState } from "react";
 import { ArrowLeft, ImagePlus, X } from "lucide-react";
 import { Link } from "react-router-dom";
 
-const ROOM_TYPES = ["Deluxe", "Suite", "Premium", "Standard"];
-const BED_TYPES = ["King Bed", "Queen Bed", "Twin Beds", "Single Bed"];
-const STATUSES = ["Available", "Occupied", "Maintenance", "Unavailable"];
+const ROOM_TYPES = ["SINGLE", "DOUBLE", "DELUXE", "SUITE", "FAMILY"];
+const BED_TYPES = ["SINGLE", "DOUBLE", "QUEEN", "KING"];
+const STATUSES = ["AVAILABLE", "BOOKED", "MAINTENANCE"];
 
 const AMENITIES = [
   "Wi-Fi",
@@ -190,7 +190,7 @@ function RoomForm({ initialData = null, isEdit = false, onSubmit }) {
 
               {ROOM_TYPES.map((type) => (
                 <option key={type} value={type}>
-                  {type}
+                  {type.charAt(0) + type.slice(1).toLowerCase()}
                 </option>
               ))}
             </select>
@@ -231,7 +231,7 @@ function RoomForm({ initialData = null, isEdit = false, onSubmit }) {
 
               {BED_TYPES.map((type) => (
                 <option key={type} value={type}>
-                  {type}
+                  {type.charAt(0) + type.slice(1).toLowerCase()}
                 </option>
               ))}
             </select>
@@ -275,7 +275,7 @@ function RoomForm({ initialData = null, isEdit = false, onSubmit }) {
             >
               {STATUSES.map((status) => (
                 <option key={status} value={status}>
-                  {status}
+                  {status.charAt(0) + status.slice(1).toLowerCase()}
                 </option>
               ))}
             </select>

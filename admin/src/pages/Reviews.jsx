@@ -1,65 +1,12 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
-  MessageCircle,
-  Reply,
   Star,
-  Send,
+  Trash2,
 } from "lucide-react";
-
-const initialReviews = [
-  {
-    id: 1,
-    guest: "Harpreet Singh",
-    rating: 5,
-    date: "Sep 20, 2026",
-    title: "Excellent stay",
-    comment:
-      "The room was clean, comfortable and the staff was very helpful. The location was also convenient.",
-    reply: "",
-  },
-  {
-    id: 2,
-    guest: "Simran Kaur",
-    rating: 4,
-    date: "Sep 18, 2026",
-    title: "Very comfortable",
-    comment:
-      "Overall a very good experience. The room was spacious and breakfast was nice.",
-    reply:
-      "Thank you for staying with us, Simran. We are glad you enjoyed your stay.",
-  },
-  {
-    id: 3,
-    guest: "Aman Sharma",
-    rating: 5,
-    date: "Sep 15, 2026",
-    title: "Great hospitality",
-    comment:
-      "The staff was extremely welcoming and the property was maintained very well.",
-    reply: "",
-  },
-  {
-    id: 4,
-    guest: "Navneet Gill",
-    rating: 3,
-    date: "Sep 10, 2026",
-    title: "Good but could improve",
-    comment:
-      "The overall stay was good, but the room service took longer than expected.",
-    reply: "",
-  },
-  {
-    id: 5,
-    guest: "Riya Kapoor",
-    rating: 5,
-    date: "Sep 05, 2026",
-    title: "Wonderful experience",
-    comment:
-      "Beautiful property and very friendly staff. Would definitely consider staying here again.",
-    reply:
-      "Thank you, Riya. We truly appreciate your kind words and look forward to welcoming you again.",
-  },
-];
+import {
+  deleteAdminReview,
+  getAdminReviews,
+} from "../services/review.service";
 
 function StarRating({ rating }) {
   return (
@@ -80,10 +27,53 @@ function StarRating({ rating }) {
 }
 
 function Reviews() {
-  const [reviews, setReviews] = useState(initialReviews);
+  const [reviews, setReviews] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [deletingId, setDeletingId] = useState(null);
   const [ratingFilter, setRatingFilter] = useState("All");
-  const [replyingId, setReplyingId] = useState(null);
-  const [replyText, setReplyText] = useState("");
+
+  useEffect(() => {
+    const fetchReviews = async () => {
+      try {
+        setLoading(true);
+        setError("");
+        const data = await getAdminReviews();
+        const fetchedReviews = Array.isArray(data?.reviews)
+          ? data.reviews
+          : [];
+
+        setReviews(
+          fetchedReviews.map((review) => ({
+            id: review._id,
+            guest: review.userId?.name || "Not available",
+            guestEmail: review.userId?.email || "Not available",
+            rating: Number(review.rating) || 0,
+            date: review.createdAt
+              ? new Date(review.createdAt).toLocaleDateString("en-IN")
+              : "Not available",
+            bookingId: review.bookingId?._id || "Not available",
+            stay:
+              review.bookingId?.checkInDate &&
+              review.bookingId?.checkOutDate
+                ? `${new Date(
+                    review.bookingId.checkInDate
+                  ).toLocaleDateString("en-IN")} - ${new Date(
+                    review.bookingId.checkOutDate
+                  ).toLocaleDateString("en-IN")}`
+                : "Not available",
+            comment: review.comment || "Not available",
+          }))
+        );
+      } catch (fetchError) {
+        setError(fetchError.message || "Unable to load reviews.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchReviews();
+  }, []);
 
   const filteredReviews = useMemo(() => {
     if (ratingFilter === "All") {
@@ -111,38 +101,22 @@ function Reviews() {
     1: reviews.filter((review) => review.rating === 1).length,
   };
 
-  const startReply = (review) => {
-    setReplyingId(review.id);
-    setReplyText(review.reply || "");
-  };
+  const handleDelete = async (review) => {
+    if (!window.confirm("Delete this review? This action cannot be undone.")) {
+      return;
+    }
 
-  const cancelReply = () => {
-    setReplyingId(null);
-    setReplyText("");
-  };
-
-  const submitReply = (reviewId) => {
-    if (!replyText.trim()) return;
-
-    setReviews((currentReviews) =>
-      currentReviews.map((review) =>
-        review.id === reviewId
-          ? {
-              ...review,
-              reply: replyText.trim(),
-            }
-          : review
-      )
-    );
-
-    console.log("Review reply:", {
-      reviewId,
-      reply: replyText.trim(),
-    });
-
-    // POST /api/reviews/:id/reply later
-
-    cancelReply();
+    try {
+      setDeletingId(review.id);
+      await deleteAdminReview(review.id);
+      setReviews((currentReviews) =>
+        currentReviews.filter((currentReview) => currentReview.id !== review.id)
+      );
+    } catch (deleteError) {
+      setError(deleteError.message || "Unable to delete review.");
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   return (
@@ -159,9 +133,15 @@ function Reviews() {
         </h1>
 
         <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
-          See what guests are saying about your hotel and respond to their feedback.
+          See what guests are saying about your hotel.
         </p>
       </div>
+
+      {error && (
+        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          {error}
+        </div>
+      )}
 
       {/* Rating Overview */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
@@ -296,26 +276,44 @@ function Reviews() {
                     {review.date}
                   </p>
 
+                  <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
+                    {review.guestEmail}
+                  </p>
+
                 </div>
 
-                {!review.reply && replyingId !== review.id && (
+                <div className="flex items-center gap-2">
                   <button
-                    onClick={() => startReply(review)}
-                    className="inline-flex w-fit items-center gap-2 rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm font-medium text-[var(--color-primary)] hover:bg-[var(--color-surface-muted)]"
+                    type="button"
+                    disabled
+                    title="Replying to reviews is not available yet."
+                    className="inline-flex w-fit cursor-not-allowed items-center gap-2 rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm font-medium text-[var(--color-text-muted)] opacity-70"
                   >
-                    <Reply size={16} />
-                    Reply
+                    Reply unavailable
                   </button>
-                )}
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(review)}
+                    disabled={deletingId === review.id}
+                    title="Delete review"
+                    className="inline-flex items-center gap-2 rounded-lg border border-red-200 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <Trash2 size={16} />
+                    {deletingId === review.id ? "Deleting..." : "Delete"}
+                  </button>
+                </div>
 
               </div>
 
               {/* Review Content */}
               <div className="mt-4">
+                <p className="text-xs text-[var(--color-text-muted)]">
+                  Booking: {review.bookingId}
+                </p>
 
-                <h3 className="font-medium">
-                  {review.title}
-                </h3>
+                <p className="mt-1 text-xs text-[var(--color-text-muted)]">
+                  Stay: {review.stay}
+                </p>
 
                 <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--color-text-secondary)]">
                   {review.comment}
@@ -323,92 +321,17 @@ function Reviews() {
 
               </div>
 
-              {/* Existing Reply */}
-              {review.reply && replyingId !== review.id && (
-                <div className="mt-5 rounded-xl bg-[var(--color-surface-muted)] p-4">
-
-                  <div className="flex items-center gap-2">
-
-                    <MessageCircle
-                      size={17}
-                      className="text-[var(--color-primary)]"
-                    />
-
-                    <p className="text-sm font-medium">
-                      Your response
-                    </p>
-
-                  </div>
-
-                  <p className="mt-2 text-sm leading-6 text-[var(--color-text-secondary)]">
-                    {review.reply}
-                  </p>
-
-                  <button
-                    onClick={() => startReply(review)}
-                    className="mt-3 text-sm font-medium text-[var(--color-primary)] hover:underline"
-                  >
-                    Edit response
-                  </button>
-
-                </div>
-              )}
-
-              {/* Reply Form */}
-              {replyingId === review.id && (
-                <div className="mt-5 rounded-xl border border-[var(--color-border)] p-4">
-
-                  <div className="flex items-center gap-2">
-
-                    <MessageCircle
-                      size={17}
-                      className="text-[var(--color-primary)]"
-                    />
-
-                    <p className="text-sm font-medium">
-                      {review.reply
-                        ? "Edit your response"
-                        : "Write a response"}
-                    </p>
-
-                  </div>
-
-                  <textarea
-                    rows={4}
-                    value={replyText}
-                    onChange={(e) => setReplyText(e.target.value)}
-                    placeholder="Write a professional response to the guest..."
-                    className="mt-3 w-full resize-none rounded-xl border border-[var(--color-border)] p-3 text-sm outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/10"
-                  />
-
-                  <div className="mt-3 flex flex-wrap gap-2">
-
-                    <button
-                      onClick={() => submitReply(review.id)}
-                      disabled={!replyText.trim()}
-                      className="inline-flex items-center gap-2 rounded-lg bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-white transition hover:bg-[var(--color-primary-dark)] disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      <Send size={15} />
-                      {review.reply ? "Update Response" : "Send Response"}
-                    </button>
-
-                    <button
-                      onClick={cancelReply}
-                      className="rounded-lg border border-[var(--color-border)] px-4 py-2 text-sm font-medium hover:bg-[var(--color-surface-muted)]"
-                    >
-                      Cancel
-                    </button>
-
-                  </div>
-
-                </div>
-              )}
-
             </div>
 
           ))}
 
-          {filteredReviews.length === 0 && (
+          {loading && (
+            <div className="p-10 text-center text-sm text-[var(--color-text-secondary)]">
+              Loading reviews...
+            </div>
+          )}
+
+          {!loading && filteredReviews.length === 0 && (
             <div className="p-10 text-center">
 
               <Star

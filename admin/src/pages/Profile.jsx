@@ -1,16 +1,53 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Camera, Mail, Phone, User, Hotel } from "lucide-react";
 
+import { useAdminAuth } from "../context/AdminAuthContext";
+import { useHotel } from "../context/hotelContext";
+import {
+  getAdminProfile,
+  updateAdminProfile,
+} from "../services/profile.service";
+
 function Profile() {
+  const { user, updateUser } = useAdminAuth();
+  const { hotel } = useHotel();
   const [profile, setProfile] = useState({
-    name: "Manpreet Singh",
-    email: "manager@aauji.com",
-    phone: "+91 98765 43210",
-    role: "Hotel Manager",
-    hotel: "The Grand Amritsar",
+    name: "Not available",
+    email: "Not available",
+    phone: "Not available",
+    role: "Not available",
+    hotel: "Not available",
   });
 
   const [saved, setSaved] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        setLoading(true);
+        setError("");
+        const data = await getAdminProfile();
+        const currentUser = data.user || user;
+
+        setProfile({
+          name: currentUser?.name || "",
+          email: currentUser?.email || "",
+          phone: currentUser?.phone || "",
+          role: currentUser?.role || "Not available",
+          hotel: hotel?.name || "Not available",
+        });
+      } catch (fetchError) {
+        setError(fetchError.message || "Unable to load profile.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, [hotel, user]);
 
   const handleChange = (field, value) => {
     setProfile((current) => ({
@@ -21,13 +58,47 @@ function Profile() {
     setSaved(false);
   };
 
-  const handleSave = () => {
-    console.log("Updated manager profile:", profile);
+  const handleSave = async (event) => {
+    event.preventDefault();
 
-    // PATCH /api/manager/profile later
+    if (!profile.name.trim() || !profile.email.trim() || !profile.phone.trim()) {
+      setError("Name, email, and phone are required.");
+      setSaved(false);
+      return;
+    }
 
-    setSaved(true);
+    try {
+      setSaving(true);
+      setError("");
+      setSaved(false);
+      const data = await updateAdminProfile({
+        name: profile.name,
+        email: profile.email,
+        phone: profile.phone,
+      });
+
+      const updatedUser = data.user;
+      updateUser(updatedUser);
+      setProfile((current) => ({
+        ...current,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        phone: updatedUser.phone,
+      }));
+      setSaved(true);
+    } catch (saveError) {
+      setError(saveError.message || "Unable to save profile.");
+    } finally {
+      setSaving(false);
+    }
   };
+
+  const initials = profile.name
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0].toUpperCase())
+    .join("") || "NA";
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
@@ -47,6 +118,12 @@ function Profile() {
         </p>
       </div>
 
+      {error && (
+        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          {error}
+        </div>
+      )}
+
       {/* Profile Card */}
       <div className="overflow-hidden rounded-2xl border border-[var(--color-border)] bg-white">
 
@@ -63,7 +140,7 @@ function Profile() {
 
               <div className="relative flex h-24 w-24 items-center justify-center rounded-2xl border-4 border-white bg-[var(--color-surface-muted)] text-2xl font-semibold text-[var(--color-primary)] shadow-sm sm:h-28 sm:w-28">
 
-                MS
+                {initials}
 
                 <button
                   type="button"
@@ -91,7 +168,8 @@ function Profile() {
           </div>
 
           {/* Form */}
-          <div className="mt-8 grid gap-5 md:grid-cols-2">
+          <form onSubmit={handleSave} className="mt-8">
+            <div className="grid gap-5 md:grid-cols-2">
 
             {/* Name */}
             <div>
@@ -113,9 +191,10 @@ function Profile() {
                     handleChange("name", e.target.value)
                   }
                   className="w-full rounded-xl border border-[var(--color-border)] py-3 pl-10 pr-4 text-sm outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/10"
+                  disabled={loading || saving}
                 />
 
-              </div>
+                </div>
             </div>
 
             {/* Email */}
@@ -138,6 +217,7 @@ function Profile() {
                     handleChange("email", e.target.value)
                   }
                   className="w-full rounded-xl border border-[var(--color-border)] py-3 pl-10 pr-4 text-sm outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/10"
+                  disabled={loading || saving}
                 />
 
               </div>
@@ -163,6 +243,7 @@ function Profile() {
                     handleChange("phone", e.target.value)
                   }
                   className="w-full rounded-xl border border-[var(--color-border)] py-3 pl-10 pr-4 text-sm outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/10"
+                  disabled={loading || saving}
                 />
 
               </div>
@@ -201,11 +282,11 @@ function Profile() {
           <div className="mt-6 flex flex-wrap items-center gap-3">
 
             <button
-              type="button"
-              onClick={handleSave}
-              className="rounded-xl bg-[var(--color-primary)] px-5 py-3 text-sm font-medium text-white hover:bg-[var(--color-primary-dark)]"
+              type="submit"
+              disabled={loading || saving}
+              className="rounded-xl bg-[var(--color-primary)] px-5 py-3 text-sm font-medium text-white hover:bg-[var(--color-primary-dark)] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Save Changes
+              {saving ? "Saving..." : "Save Changes"}
             </button>
 
             {saved && (
@@ -216,6 +297,7 @@ function Profile() {
 
           </div>
 
+          </form>
         </div>
 
       </div>

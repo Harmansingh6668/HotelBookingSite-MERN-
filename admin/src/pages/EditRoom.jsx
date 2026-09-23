@@ -1,5 +1,7 @@
+import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import RoomForm from "../components/rooms/RoomForm";
+import { getAdminRoomById, updateAdminRoom } from "../services/room.service";
 
 const rooms = [
   {
@@ -44,13 +46,36 @@ function EditRoom() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const room = location.state?.room || rooms.find((item) => item.id === id);
+  const [room, setRoom] = useState(location.state?.room || rooms.find((item) => item.id === id));
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
 
+  useEffect(() => {
+    getAdminRoomById(id)
+      .then(({ room: data }) => setRoom({
+        ...data,
+        roomType: data.roomType
+          ?.toLowerCase()
+          .replace(/^\w/, (value) => value.toUpperCase()),
+        roomNumber: data.roomNumber,
+        price: data.pricePerNight,
+        bedType: data.bedType
+          ?.toLowerCase()
+          .replace(/^\w/, (value) => value.toUpperCase()) + " Bed",
+        status: data.status
+          ?.toLowerCase()
+          .replace(/(^|_)\w/g, (match) => match.replace("_", "").toUpperCase()),
+      }))
+      .catch((error) => setLoadError(error.message))
+      .finally(() => setLoading(false));
+  }, [id, room]);
+
+  if (loading) return <p className="text-sm text-[var(--color-text-secondary)]">Loading room...</p>;
   if (!room) {
     return (
       <div className="rounded-[18px] border border-[var(--color-border)] bg-white p-8 text-center">
         <h1 className="text-lg font-semibold text-[var(--color-text-primary)]">
-          Room Not Found
+          {loadError || "Room Not Found"}
         </h1>
 
         <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
@@ -60,14 +85,19 @@ function EditRoom() {
     );
   }
 
-  const handleUpdateRoom = (roomData) => {
-    console.log("Updated room:", {
-      id,
-      ...roomData,
+  const handleUpdateRoom = async (roomData) => {
+    await updateAdminRoom(id, {
+      roomNumber: roomData.roomNumber,
+      roomType: roomData.roomType.toUpperCase(),
+      description: roomData.description,
+      capacity: Number(roomData.capacity),
+      pricePerNight: Number(roomData.price),
+      bedType: roomData.bedType.toUpperCase().replace(" BED", "").replace(" BEDS", ""),
+      status: roomData.status.toUpperCase().replace(" ", "_"),
+      amenities: roomData.amenities,
+      images: roomData.images,
     });
 
-    // Backend integration will be added later.
-    // PATCH /api/rooms/:id
     navigate(`/rooms/${id}`, {
       replace: true,
       state: {
