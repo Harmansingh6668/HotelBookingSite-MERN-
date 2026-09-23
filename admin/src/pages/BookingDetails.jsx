@@ -1,11 +1,12 @@
 import { Link, useParams } from "react-router-dom";
+import { useEffect, useState } from "react";
 import {
   ArrowLeft,
   CalendarDays,
   CreditCard,
   UserRound,
 } from "lucide-react";
-import { bookings } from "../data/bookings";
+import { getAdminBookingById } from "../services/booking.service";
 
 const statusStyles = {
   CONFIRMED: "bg-[#EAF5EF] text-[var(--color-success)]",
@@ -16,13 +17,40 @@ const statusStyles = {
 
 function BookingDetails() {
   const { id } = useParams();
-  const booking = bookings.find((item) => item.id === id);
+  const [booking, setBooking] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  if (!booking) {
+  useEffect(() => {
+    getAdminBookingById(id)
+      .then(({ booking: data }) => {
+        const firstRoom = data.rooms?.[0];
+        setBooking({
+          bookingId: data._id,
+          guestName: data.userId?.name || "Unknown guest",
+          guests: data.rooms?.reduce((total, room) => total + (room.guests || 0), 0) || 0,
+          roomNumber: firstRoom?.roomId?.roomNumber || "N/A",
+          roomType: firstRoom?.roomId?.roomType || "N/A",
+          checkIn: new Date(data.checkInDate).toLocaleDateString("en-IN"),
+          checkOut: new Date(data.checkOutDate).toLocaleDateString("en-IN"),
+          nights: data.totalNights || 0,
+          amount: data.totalAmount || 0,
+          status: data.status,
+          paymentStatus: data.paymentStatus || "N/A",
+          createdAt: new Date(data.createdAt).toLocaleDateString("en-IN"),
+        });
+      })
+      .catch((fetchError) => setError(fetchError.message))
+      .finally(() => setLoading(false));
+  }, [id]);
+
+  if (loading) return <p className="text-sm text-[var(--color-text-secondary)]">Loading booking...</p>;
+
+  if (error || !booking) {
     return (
       <div className="rounded-2xl border border-[var(--color-border)] bg-white p-8 text-center">
         <h1 className="text-xl font-semibold text-[var(--color-text-primary)]">
-          Booking not found
+          {error || "Booking not found"}
         </h1>
         <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
           The booking you are trying to view does not exist.
