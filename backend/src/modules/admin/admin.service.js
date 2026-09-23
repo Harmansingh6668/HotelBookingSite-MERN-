@@ -16,6 +16,7 @@ const getDashboard = async (user) => {
     throw new Error("Hotel not found");
   }
 
+
   // --------------------------------
   // Room statistics
   // --------------------------------
@@ -106,7 +107,6 @@ const getHotel = async (user) => {
 
   return hotel;
 };
-
 const updateHotel = async (user, updateData) => {
   if (!user.hotelId) {
     throw new Error("Hotel is not assigned to this admin");
@@ -118,7 +118,10 @@ const updateHotel = async (user, updateData) => {
     throw new Error("Hotel not found");
   }
 
-  // Hotel details
+  // --------------------------------
+  // Update hotel basic information
+  // --------------------------------
+
   if (updateData.name !== undefined) {
     hotel.name = updateData.name;
   }
@@ -139,23 +142,55 @@ const updateHotel = async (user, updateData) => {
     hotel.country = updateData.country;
   }
 
-  // Hotel images
-  if (updateData.image !== undefined) {
-    hotel.image = updateData.image;
+  // --------------------------------
+  // Update images
+  // --------------------------------
+
+  if (updateData.images !== undefined) {
+    hotel.images = updateData.images;
   }
 
-  // Hotel amenities
+  // --------------------------------
+  // Update amenities
+  // --------------------------------
+
   if (updateData.amenities !== undefined) {
     hotel.amenities = updateData.amenities;
   }
 
-  // Hotel status
-  if (updateData.status !== undefined) {
-    if (!["ACTIVE", "INACTIVE"].includes(updateData.status)) {
-      throw new Error("Invalid hotel status");
-    }
+  // --------------------------------
+  // Check whether profile is complete
+  // --------------------------------
 
-    hotel.status = updateData.status;
+  const hasName =
+    hotel.name && hotel.name.trim() !== "";
+
+  const hasDescription =
+    hotel.description &&
+    hotel.description.trim() !== "";
+
+  const hasAddress =
+    hotel.address &&
+    hotel.address.trim() !== "";
+
+  const hasCity =
+    hotel.city &&
+    hotel.city.trim() !== "";
+
+  const hasCountry =
+    hotel.country &&
+    hotel.country.trim() !== "";
+
+  if (
+    hasName &&
+    hasDescription &&
+    hasAddress &&
+    hasCity &&
+    hasCountry
+  ) {
+    hotel.profileCompleted = true;
+  } else {
+    hotel.profileCompleted = false;
   }
 
   await hotel.save();
