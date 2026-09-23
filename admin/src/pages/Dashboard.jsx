@@ -11,76 +11,26 @@ import {
   MoreHorizontal,
   Users,
 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { getAdminBookings } from "../services/booking.service";
+import { getAdminRooms } from "../services/room.service";
 
-const stats = [
+const statDefinitions = [
   {
     title: "Total Bookings",
-    value: "24",
-    change: "+12.5%",
-    positive: true,
     icon: CalendarCheck,
   },
   {
     title: "Revenue",
-    value: "₹84,500",
-    change: "+8.4%",
-    positive: true,
     icon: IndianRupee,
   },
   {
     title: "Occupancy",
-    value: "76%",
-    change: "+5.2%",
-    positive: true,
     icon: BedDouble,
   },
   {
     title: "Available Rooms",
-    value: "18 / 32",
-    change: "Today",
-    positive: null,
     icon: CalendarDays,
-  },
-];
-
-const checkIns = [
-  {
-    guest: "Rahul Sharma",
-    room: "204",
-    guests: 2,
-    time: "2:00 PM",
-    status: "Confirmed",
-  },
-  {
-    guest: "Aman Singh",
-    room: "301",
-    guests: 3,
-    time: "3:30 PM",
-    status: "Confirmed",
-  },
-  {
-    guest: "Simran Kaur",
-    room: "105",
-    guests: 2,
-    time: "5:00 PM",
-    status: "Pending",
-  },
-];
-
-const checkOuts = [
-  {
-    guest: "Harpreet Singh",
-    room: "201",
-    guests: 2,
-    time: "11:00 AM",
-    status: "Ready",
-  },
-  {
-    guest: "Neha Sharma",
-    room: "302",
-    guests: 2,
-    time: "11:30 AM",
-    status: "Ready",
   },
 ];
 
@@ -279,30 +229,31 @@ function BookingChart() {
   );
 }
 
-function RoomStatus() {
+function RoomStatus({ rooms: roomData }) {
+  const total = roomData.length;
   const rooms = [
     {
       label: "Available",
-      count: 18,
-      total: 32,
+      count: roomData.filter((room) => room.status === "AVAILABLE").length,
+      total,
       color: "bg-[var(--color-success)]",
     },
     {
       label: "Occupied",
-      count: 10,
-      total: 32,
+      count: roomData.filter((room) => ["BOOKED", "OCCUPIED"].includes(room.status)).length,
+      total,
       color: "bg-[var(--color-primary)]",
     },
     {
       label: "Maintenance",
-      count: 2,
-      total: 32,
+      count: roomData.filter((room) => room.status === "MAINTENANCE").length,
+      total,
       color: "bg-[var(--color-warning)]",
     },
     {
       label: "Unavailable",
-      count: 2,
-      total: 32,
+      count: roomData.filter((room) => !["AVAILABLE", "BOOKED", "OCCUPIED", "MAINTENANCE"].includes(room.status)).length,
+      total,
       color: "bg-[var(--color-danger)]",
     },
   ];
@@ -358,8 +309,73 @@ function RoomStatus() {
     </div>
   );
 }
-
+import { useHotel } from "../context/hotelContext";
 function Dashboard() {
+  const { hotel, hotelError } = useHotel();
+  const [bookings, setBookings] = useState([]);
+  const [rooms, setRooms] = useState([]);
+  const [dataError, setDataError] = useState("");
+
+  useEffect(() => {
+    Promise.all([getAdminBookings(), getAdminRooms()])
+      .then(([bookingResponse, roomResponse]) => {
+        setBookings(bookingResponse.bookings || []);
+        setRooms(
+          (roomResponse.rooms || []).map((room) => ({
+            ...room,
+            status: String(room.status || "UNAVAILABLE").toUpperCase(),
+          }))
+        );
+      })
+      .catch((error) => setDataError(error.message));
+  }, []);
+
+  const today = new Date();
+  const isToday = (value) => {
+    if (!value) return false;
+    const date = new Date(value);
+    return date.toDateString() === today.toDateString();
+  };
+  const formatTime = (value) =>
+    value
+      ? new Date(value).toLocaleTimeString("en-IN", {
+          hour: "numeric",
+          minute: "2-digit",
+        })
+      : "Not available";
+  const activityRows = (dateField, status) =>
+    bookings
+      .filter((booking) => isToday(booking[dateField]))
+      .map((booking) => {
+        const firstRoom = booking.rooms?.[0];
+        return {
+          guest: booking.userId?.name || "Not available",
+          room: String(firstRoom?.roomId?.roomNumber ?? "Not available"),
+          guests:
+            booking.rooms?.reduce((total, room) => total + (room.guests || 0), 0) || 0,
+          time: formatTime(booking[dateField]),
+          status: status || (booking.status || "Not available").toLowerCase(),
+        };
+      });
+  const checkIns = activityRows("checkInDate");
+  const checkOuts = activityRows("checkOutDate", "Ready");
+  const availableRooms = rooms.filter((room) => room.status === "AVAILABLE").length;
+  const occupiedRooms = rooms.filter((room) =>
+    ["BOOKED", "OCCUPIED"].includes(room.status)
+  ).length;
+  const pendingActions = bookings.filter((booking) => booking.status === "PENDING").length;
+  const stats = statDefinitions.map((definition, index) => ({
+    ...definition,
+    value: [
+      bookings.length,
+      `₹${bookings.reduce((total, booking) => total + (booking.totalAmount || 0), 0).toLocaleString("en-IN")}`,
+      `${rooms.length ? Math.round((occupiedRooms / rooms.length) * 100) : 0}%`,
+      `${availableRooms} / ${rooms.length}`,
+    ][index],
+    change: index === 3 ? "Today" : "",
+    positive: null,
+  }));
+  
   return (
     <div className="mx-auto max-w-[1600px]">
       {/* Header */}
@@ -374,15 +390,79 @@ function Dashboard() {
           </h1>
 
           <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
-            Here&apos;s what&apos;s happening at The Grand Amritsar today.
+            {hotel
+              ? `Here's what's happening at ${hotel.name} today.`
+              : "Loading your hotel information..."}
           </p>
+
+          {hotelError && (
+            <p className="mt-2 text-sm text-[var(--color-danger)]">
+              Unable to load hotel information: {hotelError}
+            </p>
+          )}
+          {dataError && (
+            <p className="mt-2 text-sm text-[var(--color-danger)]">
+              Unable to load dashboard data: {dataError}
+            </p>
+          )}
         </div>
 
-        <button className="w-fit rounded-[10px] border border-[var(--color-primary)] px-4 py-2.5 text-sm font-medium text-[var(--color-primary)] transition hover:bg-[var(--color-primary)] hover:text-white">
-          View Hotel
-        </button>
-      </div>
+        {hotel && (
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="w-fit rounded-[10px] border border-[var(--color-primary)] px-4 py-2.5 text-sm font-medium text-[var(--color-primary)]">
+              {hotel.name}
+            </div>
+  
+            <span
+              className={`rounded-full px-3 py-1 text-xs font-medium ${
+                hotel.status === "ACTIVE"
+                  ? "bg-[#EAF5EF] text-[var(--color-success)]"
+                  : "bg-[var(--color-surface-muted)] text-[var(--color-text-secondary)]"
+              }`}
+            >
+              {hotel.status}
+            </span>
+            
+            {hotel && (
+  <div className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-[var(--color-text-secondary)]">
+    <span>{hotel.address}</span>
+    <span>•</span>
+    <span>{hotel.city}</span>
+    <span>•</span>
+    <span>{hotel.country}</span>
+  </div>
+)}
+{hotel && (
+  <div className="mt-3 flex items-center gap-2 text-sm">
+    <span className="font-medium text-[var(--color-text-primary)]">
+      ★ {hotel.rating}
+    </span>
 
+    <span className="text-[var(--color-text-muted)]">
+      ({hotel.reviewsCount} reviews)
+    </span>
+  </div>
+)}
+{hotel && hotel.amenities?.length > 0 && (
+  <div className="mt-4 flex flex-wrap gap-2">
+    {hotel.amenities.map((amenity) => (
+      <span
+        key={amenity}
+        className="rounded-full bg-[var(--color-surface-muted)] px-3 py-1.5 text-xs font-medium text-[var(--color-text-secondary)]"
+      >
+        {amenity}
+      </span>
+    ))}
+  </div>
+)}
+{hotel && hotel.description && (
+  <p className="mt-4 max-w-2xl text-sm leading-6 text-[var(--color-text-secondary)]">
+    {hotel.description}
+  </p>
+)}
+            </div>
+        )}
+        </div>
       {/* KPI Cards */}
       <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {stats.map((stat) => (
@@ -404,7 +484,7 @@ function Dashboard() {
               </p>
 
               <p className="mt-1 text-xl font-semibold text-[var(--color-text-primary)]">
-                7
+                {checkIns.length || 0}
               </p>
             </div>
           </div>
@@ -422,7 +502,7 @@ function Dashboard() {
               </p>
 
               <p className="mt-1 text-xl font-semibold text-[var(--color-text-primary)]">
-                4
+                {checkOuts.length || 0}
               </p>
             </div>
           </div>
@@ -440,7 +520,7 @@ function Dashboard() {
               </p>
 
               <p className="mt-1 text-xl font-semibold text-[var(--color-text-primary)]">
-                2
+                {pendingActions || 0}
               </p>
             </div>
           </div>
@@ -450,7 +530,7 @@ function Dashboard() {
       {/* Chart + Room Status */}
       <div className="mt-6 grid gap-6 xl:grid-cols-[1.7fr_1fr]">
         <BookingChart />
-        <RoomStatus />
+        <RoomStatus rooms={rooms} />
       </div>
 
       {/* Activity */}
@@ -470,6 +550,7 @@ function Dashboard() {
         />
       </div>
     </div>
+
   );
 }
 

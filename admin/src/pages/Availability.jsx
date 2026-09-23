@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import AvailabilityGrid from "../components/availability/AvailabilityGrid";
+import { getAdminRooms } from "../services/room.service";
 import {
   CalendarDays,
   BedDouble,
@@ -29,13 +30,6 @@ const summaryCards = [
     iconClass: "text-[var(--color-warning)]",
     bgClass: "bg-[var(--color-warning)]/10",
   },
-  {
-    label: "Unavailable",
-    value: 2,
-    icon: CalendarDays,
-    iconClass: "text-[var(--color-text-secondary)]",
-    bgClass: "bg-[var(--color-text-secondary)]/10",
-  },
 ];
 
 const legend = [
@@ -51,16 +45,32 @@ const legend = [
     label: "Maintenance",
     color: "bg-[var(--color-warning)]",
   },
-  {
-    label: "Unavailable",
-    color: "bg-[var(--color-text-secondary)]",
-  },
 ];
 
 function Availability() {
     const [currentWeek, setCurrentWeek] = useState(0);
     const [roomType, setRoomType] = useState("All");
     const [status, setStatus] = useState("All");
+    const [rooms, setRooms] = useState([]);
+    const [error, setError] = useState("");
+
+    useEffect(() => {
+      getAdminRooms()
+        .then(({ rooms: data = [] }) => setRooms(data))
+        .catch((fetchError) => setError(fetchError.message));
+    }, []);
+
+    const counts = rooms.reduce((result, room) => {
+      const normalized = String(room.status || "").toUpperCase();
+      const key = normalized === "BOOKED" || normalized === "OCCUPIED"
+        ? "Booked"
+        : normalized.charAt(0) + normalized.slice(1).toLowerCase();
+      if (result[key] !== undefined) result[key] += 1;
+      return result;
+    }, { Available: 0, Booked: 0, Maintenance: 0 });
+    const availableRoomTypes = [
+      ...new Set(rooms.map((room) => room.roomType).filter(Boolean)),
+    ];
   return (
     <div className="space-y-6">
 
@@ -116,7 +126,7 @@ function Availability() {
               </div>
 
               <p className="mt-4 text-2xl font-semibold text-[var(--color-text-primary)]">
-                {card.value}
+                {counts[card.label] || 0}
               </p>
 
               <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
@@ -126,6 +136,7 @@ function Availability() {
           );
         })}
       </div>
+      {error && <p className="text-sm text-[var(--color-danger)]">Unable to load rooms: {error}</p>}
 
       {/* Legend */}
       <div className="flex flex-wrap items-center gap-x-5 gap-y-3 rounded-[14px] border border-[var(--color-border)] bg-white px-4 py-4">
@@ -169,9 +180,11 @@ function Availability() {
                 className="rounded-[10px] border border-[var(--color-border)] bg-white px-3 py-2.5 text-sm text-[var(--color-text-primary)] outline-none focus:border-[var(--color-primary)]"
                 >
                 <option value="All">All Room Types</option>
-                <option value="Deluxe">Deluxe</option>
-                <option value="Suite">Suite</option>
-                <option value="Premium">Premium</option>
+                {availableRoomTypes.map((type) => (
+                  <option key={type} value={type}>
+                    {type}
+                  </option>
+                ))}
                 </select>
 
                 <select
@@ -183,7 +196,6 @@ function Availability() {
                 <option value="Available">Available</option>
                 <option value="Booked">Booked</option>
                 <option value="Maintenance">Maintenance</option>
-                <option value="Unavailable">Unavailable</option>
                 </select>
 
             </div>
@@ -191,6 +203,7 @@ function Availability() {
 
       {/* Availability Grid */}
       <AvailabilityGrid  
+        rooms={rooms}
         currentWeek={currentWeek}
         roomType={roomType}
         status={status}

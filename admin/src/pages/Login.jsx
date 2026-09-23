@@ -1,16 +1,31 @@
 import { useState } from "react";
 import { Eye, EyeOff, LockKeyhole, Mail, ShieldCheck } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useAdminAuth } from "../context/AdminAuthContext";
 
 function Login() {
+  const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
+  const { login } = useAdminAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
-
-  const handleSubmit = (event) => {
+  const [loading, setLoading] = useState(false);
+  
+  const handleSubmit = async (event) => {
     event.preventDefault();
-    setMessage("Login will be connected when the backend is ready.");
+    setMessage("");
+    setLoading(true);
+
+    try {
+      await login(email, password);
+      console.log("Login successful");
+      navigate("/dashboard");
+    } catch (error) {
+      setMessage(error.message || "Login failed. Please try again.");
+    }finally {
+    setLoading(false);
+    }
   };
 
   return (
@@ -151,15 +166,16 @@ function Login() {
 
               <button
                 type="submit"
+                disabled={loading}
                 className="w-full rounded-xl bg-[var(--color-primary)] px-5 py-3.5 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-dark)] focus:outline-none focus:ring-4 focus:ring-[var(--color-primary)]/20"
               >
-                Sign in
+                {loading ? "Signing in..." : "Sign in"}
               </button>
 
               {message && (
                 <p
-                  role="status"
-                  className="rounded-lg bg-[var(--color-surface-muted)] px-3 py-2.5 text-center text-sm text-[var(--color-text-secondary)]"
+                  role="alert"
+                  className="rounded-lg bg-red-50 px-3 py-2.5 text-center text-sm text-[var(--color-danger)]"
                 >
                   {message}
                 </p>
@@ -172,10 +188,10 @@ function Login() {
             </p>
 
             <Link
-              to="/"
+              to="/login"
               className="mt-5 block text-center text-sm font-medium text-[var(--color-primary)] hover:text-[var(--color-primary-dark)]"
             >
-              Return to dashboard
+              Back to login page
             </Link>
           </div>
         </section>

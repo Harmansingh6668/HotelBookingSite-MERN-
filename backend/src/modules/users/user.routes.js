@@ -5,6 +5,20 @@ const allowRoles = require("../middleware/role.middleware");
 
 const router = express.Router();
 
+router.get(
+  "/me",
+  authMiddleware,
+  allowRoles("HOTEL_ADMIN", "SUPER_ADMIN"),
+  userController.getCurrentUser
+);
+
+router.patch(
+  "/me",
+  authMiddleware,
+  allowRoles("HOTEL_ADMIN", "SUPER_ADMIN"),
+  userController.updateCurrentUser
+);
+
 router.get("/", authMiddleware, allowRoles("SUPER_ADMIN"), userController.getUsers);
 
 router.get("/email/:email", authMiddleware,  allowRoles("SUPER_ADMIN"), userController.getUserByEmail);
