@@ -1,18 +1,16 @@
 import { apiClient } from "./client";
 
 export const createBooking = async ({
-  roomId,
+  rooms,
   checkInDate,
   checkOutDate,
-  guests,
 }) => {
   return apiClient("/api/bookings", {
     method: "POST",
     body: JSON.stringify({
-      roomId,
+      rooms,
       checkInDate,
       checkOutDate,
-      guests,
     }),
   });
 };
