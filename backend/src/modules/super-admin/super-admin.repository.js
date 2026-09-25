@@ -322,6 +322,99 @@ const updateHotelAdminStatus = async (
   );
 };
 
+// --------------------------------
+// Get all bookings
+// --------------------------------
+
+const getAllBookings = async () => {
+  return await Booking.find()
+    .populate(
+      "userId","name email phone"
+    )
+    .populate(
+      "hotelId","name address city country"
+    )
+    .populate(
+      "rooms.roomId", "roomNumber roomType pricePerNight"
+    )
+    .sort({
+      createdAt: -1,
+    });
+};
+
+// --------------------------------
+// Get booking by ID
+// --------------------------------
+
+const getBookingById = async (bookingId) => {
+  return await Booking.findById(bookingId)
+    .populate(
+      "userId","name email phone"
+    )
+    .populate(
+      "hotelId","name address city country"
+    )
+    .populate(
+      "rooms.roomId","roomNumber roomType pricePerNight"
+    );
+};
+
+
+
+
+// --------------------------------
+// Get all reviews
+// --------------------------------
+
+const getAllReviews = async () => {
+  return await Review.find()
+    .populate(
+      "userId",
+      "name email phone"
+    )
+    .populate(
+      "hotelId",
+      "name city country"
+    )
+    .populate(
+      "bookingId",
+      "checkInDate checkOutDate totalAmount status paymentStatus"
+    )
+    .sort({
+      createdAt: -1,
+    });
+};
+
+// --------------------------------
+// Get review by ID
+// --------------------------------
+
+const getReviewById = async (reviewId) => {
+  return await Review.findById(reviewId)
+    .populate(
+      "userId",
+      "name email phone"
+    )
+    .populate(
+      "hotelId",
+      "name city country"
+    )
+    .populate(
+      "bookingId",
+      "checkInDate checkOutDate totalAmount status paymentStatus"
+    );
+};
+
+// --------------------------------
+// Delete review
+// --------------------------------
+
+const deleteReview = async (reviewId) => {
+  return await Review.findByIdAndDelete(reviewId);
+};
+
+
+
 module.exports = {
   getDashboardStatistics,
   getAllHotels,
@@ -334,4 +427,12 @@ module.exports = {
   getAllHotelAdmins,
   getHotelAdminById,
   updateHotelAdminStatus,
+
+  
+  getAllBookings,
+  getBookingById,
+
+  getAllReviews,
+getReviewById,
+deleteReview,
 };
