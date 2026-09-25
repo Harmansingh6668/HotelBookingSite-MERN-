@@ -75,5 +75,41 @@ router.put(
   superAdminController.updateHotelAdminStatus
 );
 
+router.get(
+  "/bookings",
+  authMiddleware,
+  allowRoles("SUPER_ADMIN"),
+  superAdminController.getAllBookings
+);
+
+router.get(
+  "/bookings/:id",
+  authMiddleware,
+  allowRoles("SUPER_ADMIN"),
+  superAdminController.getBookingDetails
+);
+
+
+router.get(
+  "/reviews",
+  authMiddleware,
+  allowRoles("SUPER_ADMIN"),
+  superAdminController.getAllReviews
+);
+
+router.get(
+  "/reviews/:id",
+  authMiddleware,
+  allowRoles("SUPER_ADMIN"),
+  superAdminController.getReviewDetails
+);
+
+router.delete(
+  "/reviews/:id",
+  authMiddleware,
+  allowRoles("SUPER_ADMIN"),
+  superAdminController.deleteReview
+);
+
 
 module.exports = router;

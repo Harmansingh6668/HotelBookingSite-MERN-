@@ -18,7 +18,7 @@ const createHotelAdmin = async (data) => {
     city,
     country,
   } = data;
-  
+
 
 
   // --------------------------------
@@ -225,7 +225,7 @@ const getDashboard = async () => {
 
   return dashboard;
 
-  
+
 };
 
 // --------------------------------
@@ -281,15 +281,91 @@ const updateHotelAdminStatus = async (
 };
 
 
+// --------------------------------
+// Get all bookings
+// --------------------------------
+
+const getAllBookings = async () => {
+  return await superAdminRepository.getAllBookings();
+};
+
+// --------------------------------
+// Get booking details
+// --------------------------------
+
+const getBookingDetails = async (bookingId) => {
+  const booking =
+    await superAdminRepository.getBookingById(
+      bookingId
+    );
+
+  if (!booking) {
+    throw new Error("Booking not found");
+  }
+
+  return booking;
+};
+
+
+
+// --------------------------------
+// Get all reviews
+// --------------------------------
+
+const getAllReviews = async () => {
+  return await superAdminRepository.getAllReviews();
+};
+
+// --------------------------------
+// Get review details
+// --------------------------------
+
+const getReviewDetails = async (reviewId) => {
+  const review =
+    await superAdminRepository.getReviewById(
+      reviewId
+    );
+
+  if (!review) {
+    throw new Error("Review not found");
+  }
+
+  return review;
+};
+
+// --------------------------------
+// Delete review
+// --------------------------------
+
+const deleteReview = async (reviewId) => {
+  const review =
+    await superAdminRepository.deleteReview(
+      reviewId
+    );
+
+  if (!review) {
+    throw new Error("Review not found");
+  }
+
+  return review;
+};
+
 
 module.exports = {
   createHotelAdmin,
   getDashboard,
-   getAllHotels,
+  getAllHotels,
   getHotelDetails,
   updateHotelStatus,
-  
+
   getAllHotelAdmins,
   getHotelAdminDetails,
   updateHotelAdminStatus,
+
+  getAllBookings,
+  getBookingDetails,
+
+  getAllReviews,
+getReviewDetails,
+deleteReview,
 };
