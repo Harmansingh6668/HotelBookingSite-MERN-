@@ -191,6 +191,118 @@ const updateHotelAdminStatus = async (req, res) => {
   }
 };
 
+
+// --------------------------------
+// Get all bookings
+// --------------------------------
+
+const getAllBookings = async (req, res) => {
+  try {
+    const bookings =
+      await superAdminService.getAllBookings();
+
+    return res.status(200).json({
+      success: true,
+      bookings,
+    });
+  } catch (error) {
+    return res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+// --------------------------------
+// Get booking details
+// --------------------------------
+
+const getBookingDetails = async (req, res) => {
+  try {
+    const booking =
+      await superAdminService.getBookingDetails(
+        req.params.id
+      );
+
+    return res.status(200).json({
+      success: true,
+      booking,
+    });
+  } catch (error) {
+    return res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+
+// --------------------------------
+// Get all reviews
+// --------------------------------
+
+const getAllReviews = async (req, res) => {
+  try {
+    const reviews =
+      await superAdminService.getAllReviews();
+
+    return res.status(200).json({
+      success: true,
+      reviews,
+    });
+  } catch (error) {
+    return res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+// --------------------------------
+// Get review details
+// --------------------------------
+
+const getReviewDetails = async (req, res) => {
+  try {
+    const review =
+      await superAdminService.getReviewDetails(
+        req.params.id
+      );
+
+    return res.status(200).json({
+      success: true,
+      review,
+    });
+  } catch (error) {
+    return res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+// --------------------------------
+// Delete review
+// --------------------------------
+
+const deleteReview = async (req, res) => {
+  try {
+    await superAdminService.deleteReview(
+      req.params.id
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Review deleted successfully",
+    });
+  } catch (error) {
+    return res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 module.exports = {
   createHotelAdmin,
     getDashboard,
@@ -201,4 +313,11 @@ module.exports = {
   getAllHotelAdmins,
   getHotelAdminDetails,
   updateHotelAdminStatus,
+
+    getAllBookings,
+  getBookingDetails,
+
+  getAllReviews,
+getReviewDetails,
+deleteReview,
 };
