@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
 import { BedDouble, CheckCircle2, Clock3, MapPin, Pencil, Star } from "lucide-react";
-import { useHotel } from "../context/hotelContext";
-import { updateAdminHotel } from "../services/hotel.service";
+import { useHotel } from "../context/HotelContext";
+import {
+  updateAdminHotel,
+  uploadAdminHotelImage,
+} from "../services/hotel.service";
 import { getAdminRooms } from "../services/room.service";
 
 const textValue = (value) => value || "Not available";
@@ -13,7 +16,10 @@ function Hotel() {
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
+  const [uploadingImages, setUploadingImages] = useState(false);
+  const [uploadError, setUploadError] = useState("");
   const [form, setForm] = useState(null);
+  const [images, setImages] = useState([]);
 
   useEffect(() => {
     getAdminRooms()
@@ -29,18 +35,59 @@ function Hotel() {
     return <p className="text-sm text-[var(--color-danger)]">Unable to load hotel information: {error || "Hotel not found"}</p>;
   }
 
-  const images = Array.isArray(hotel.image) ? hotel.image : [];
   const amenities = Array.isArray(hotel.amenities) ? hotel.amenities : [];
+  const hotelImages = Array.isArray(hotel.image) ? hotel.image : [];
   const location = [hotel.city, hotel.country].filter(Boolean).join(", ");
 
+  const addImage = () => {
+    setImages((prev) => [...prev, ""]);
+  };
+
+  const updateImage = (index, value) => {
+    setImages((prev) => prev.map((img, i) => (i === index ? value : img)));
+  };
+
+  const removeImage = (index) => {
+    setImages((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleImageFiles = async (event) => {
+    const files = Array.from(event.target.files || []);
+    event.target.value = "";
+
+    if (!files.length) return;
+
+    setUploadingImages(true);
+    setUploadError("");
+
+    try {
+      for (const file of files) {
+        if (file.size > 5 * 1024 * 1024) {
+          throw new Error(`${file.name} is larger than the 5 MB limit.`);
+        }
+
+        const response = await uploadAdminHotelImage(file);
+        if (!response?.image) {
+          throw new Error(`The server did not return an image URL for ${file.name}.`);
+        }
+
+        setImages((current) => [...current, response.image]);
+      }
+    } catch (error) {
+      setUploadError(error.message);
+    } finally {
+      setUploadingImages(false);
+    }
+  };
+
   const startEditing = () => {
+    setImages(Array.isArray(hotel.image) ? hotel.image : []);
     setForm({
       name: hotel.name || "",
       description: hotel.description || "",
       address: hotel.address || "",
       city: hotel.city || "",
       country: hotel.country || "",
-      image: images.join(", "),
       amenities: amenities.join(", "),
       status: hotel.status || "ACTIVE",
     });
@@ -56,7 +103,7 @@ function Hotel() {
     try {
       await updateAdminHotel({
         ...form,
-        image: form.image.split(",").map((item) => item.trim()).filter(Boolean),
+        image: images.map((image) => image.trim()).filter(Boolean),
         amenities: form.amenities.split(",").map((item) => item.trim()).filter(Boolean),
       });
       await refreshHotel();
@@ -73,7 +120,6 @@ function Hotel() {
     ["address", "Address"],
     ["city", "City"],
     ["country", "Country"],
-    ["image", "Image URLs (comma separated)"],
     ["amenities", "Amenities (comma separated)"],
   ];
 
@@ -87,8 +133,8 @@ function Hotel() {
 
       <section className="overflow-hidden rounded-2xl border border-[var(--color-border)] bg-white shadow-sm">
         <div className="relative h-56 sm:h-72 lg:h-80">
-          {images[0] ? (
-            <img src={images[0]} alt={textValue(hotel.name)} className="h-full w-full object-cover" />
+          {hotelImages[0] ? (
+            <img src={hotelImages[0]} alt={textValue(hotel.name)} className="h-full w-full object-cover" />
           ) : (
             <div className="flex h-full items-center justify-center bg-[var(--color-surface-muted)] text-sm text-[var(--color-text-secondary)]">Not available</div>
           )}
@@ -120,8 +166,101 @@ function Hotel() {
             <label className="text-sm font-medium">Status<select value={form.status} onChange={(event) => setForm({ ...form, status: event.target.value })} className="mt-1 w-full rounded-lg border border-[var(--color-border)] px-3 py-2.5 font-normal"><option value="ACTIVE">Active</option><option value="INACTIVE">Inactive</option></select></label>
             <label className="text-sm font-medium sm:col-span-2">Description<textarea value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} rows="4" className="mt-1 w-full rounded-lg border border-[var(--color-border)] px-3 py-2.5 font-normal" /></label>
           </div>
+          <section className="mt-6 space-y-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Hotel Photos
+                </h3>
+                <p className="text-sm text-gray-500">
+                  Add image URLs for your hotel photos.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={addImage}
+                className="rounded-lg border border-emerald-700 px-4 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-50"
+              >
+                + Add Photo
+              </button>
+            </div>
+
+            <label className="block text-sm font-medium text-gray-700">
+              Upload photos from your computer
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                multiple
+                onChange={handleImageFiles}
+                disabled={uploadingImages}
+                className="mt-2 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm file:mr-4 file:rounded-md file:border-0 file:bg-emerald-50 file:px-4 file:py-2 file:font-medium file:text-emerald-700 hover:file:bg-emerald-100 disabled:opacity-60"
+              />
+              <span className="mt-1 block text-xs font-normal text-gray-500">
+                JPEG, PNG, WebP, or GIF; maximum 5 MB per photo.
+              </span>
+            </label>
+            {uploadingImages && (
+              <p className="text-sm text-emerald-700">Uploading photos...</p>
+            )}
+            {uploadError && (
+              <p role="alert" className="text-sm text-red-600">
+                {uploadError}
+              </p>
+            )}
+
+            <div className="space-y-4">
+              {images.map((image, index) => (
+                <div
+                  key={index}
+                  className="rounded-xl border border-gray-200 bg-gray-50 p-4"
+                >
+                  <div className="mb-2 flex items-center justify-between">
+                    <label
+                      htmlFor={`hotel-photo-${index}`}
+                      className="text-sm font-medium text-gray-700"
+                    >
+                      Photo {index + 1}
+                    </label>
+                    {images.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeImage(index)}
+                        className="text-sm text-red-500 hover:text-red-700"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+
+                  <input
+                    id={`hotel-photo-${index}`}
+                    type="url"
+                    value={image}
+                    onChange={(event) =>
+                      updateImage(index, event.target.value)
+                    }
+                    placeholder="https://example.com/hotel-photo.jpg"
+                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 outline-none focus:border-emerald-600"
+                  />
+
+                  {image && (
+                    <div className="mt-3">
+                      <img
+                        src={image}
+                        alt={`Hotel photo ${index + 1}`}
+                        className="h-32 w-full rounded-lg object-cover"
+                        onError={(event) => {
+                          event.currentTarget.style.display = "none";
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </section>
           {saveError && <p className="mt-4 text-sm text-[var(--color-danger)]">{saveError}</p>}
-          <button type="submit" disabled={saving} className="mt-5 rounded-lg bg-[var(--color-primary)] px-4 py-2.5 text-sm font-medium text-white">{saving ? "Saving..." : "Save Hotel"}</button>
+          <button type="submit" disabled={saving || uploadingImages} className="mt-5 rounded-lg bg-[var(--color-primary)] px-4 py-2.5 text-sm font-medium text-white">{saving ? "Saving..." : "Save Hotel"}</button>
         </form>
       )}
 
@@ -135,7 +274,7 @@ function Hotel() {
 
       {activeTab === "Amenities" && <section className="mt-6 rounded-2xl border border-[var(--color-border)] bg-white p-5 sm:p-6"><div className="flex items-center justify-between"><h2 className="font-semibold">Amenities</h2><button type="button" onClick={startEditing} className="text-sm font-medium text-[var(--color-primary)]">Manage amenities</button></div><div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">{amenities.length ? amenities.map((amenity) => <div key={amenity} className="flex items-center gap-3 rounded-xl border border-[var(--color-border)] p-3.5"><CheckCircle2 size={17} className="text-[var(--color-success)]" />{amenity}</div>) : <p className="text-sm text-[var(--color-text-secondary)]">Not available</p>}</div></section>}
 
-      {activeTab === "Photos" && <section className="mt-6 rounded-2xl border border-[var(--color-border)] bg-white p-5 sm:p-6"><div className="flex items-center justify-between"><h2 className="font-semibold">Photos</h2><button type="button" onClick={startEditing} className="text-sm font-medium text-[var(--color-primary)]">Manage photos</button></div>{images.length ? <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{images.map((photo) => <img key={photo} src={photo} alt={textValue(hotel.name)} className="h-48 w-full rounded-xl object-cover" />)}</div> : <p className="mt-5 text-sm text-[var(--color-text-secondary)]">Not available</p>}</section>}
+      {activeTab === "Photos" && <section className="mt-6 rounded-2xl border border-[var(--color-border)] bg-white p-5 sm:p-6"><div className="flex items-center justify-between"><h2 className="font-semibold">Photos</h2><button type="button" onClick={startEditing} className="text-sm font-medium text-[var(--color-primary)]">Manage photos</button></div>{hotelImages.length ? <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{hotelImages.map((photo) => <img key={photo} src={photo} alt={textValue(hotel.name)} className="h-48 w-full rounded-xl object-cover" />)}</div> : <p className="mt-5 text-sm text-[var(--color-text-secondary)]">Not available</p>}</section>}
     </div>
   );
 }

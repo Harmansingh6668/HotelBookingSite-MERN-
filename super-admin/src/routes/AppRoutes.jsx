@@ -17,6 +17,11 @@ import Customers from "../pages/customers/Customers";
 import CustomerDetails from "../pages/customers/CustomerDetails";
 
 import Settings from "../pages/settings/Settings";
+
+import AddHotel from "../pages/hotels/AddHotel";
+import Bookings from "../pages/bookings/Bookings";
+import BookingDetails from "../pages/bookings/BookingDetails";
+
 function AppRoutes() {
   return (
     <Routes>
@@ -29,21 +34,12 @@ function AppRoutes() {
       />
 
       {/* Super Admin */}
-      <Route
-        element={
-          <ProtectedRoute allowedRoles={["SUPER_ADMIN"]} />
-        }
-      >
+      <Route element={ <ProtectedRoute allowedRoles={["SUPER_ADMIN"]} /> }>
         <Route element={<DashboardLayout />}>
           <Route path="/dashboard" element={<Dashboard />} />
 
-          {/* These pages will be implemented next */}
-          <Route
-            path="/hotels"
-            element={
-              <Hotels />
-            }
-          />
+          <Route path="/hotels" element={<Hotels />}/>
+          <Route path="/hotels/add" element={<AddHotel /> }/>
 
           <Route
             path="/hotels/:id"
@@ -67,9 +63,11 @@ function AppRoutes() {
 
           <Route
             path="/bookings"
-            element={
-              <PlaceholderPage title="Bookings" />
-            }
+            element={<Bookings />}
+          />
+          <Route
+            path="/bookings/:id"
+            element={<BookingDetails />}
           />
 
           <Route

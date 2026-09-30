@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Camera, Mail, Phone, User, Hotel } from "lucide-react";
 
 import { useAdminAuth } from "../context/AdminAuthContext";
-import { useHotel } from "../context/hotelContext";
+import { useHotel } from "../context/HotelContext";
 import {
   getAdminProfile,
   updateAdminProfile,

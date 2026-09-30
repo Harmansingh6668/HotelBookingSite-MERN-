@@ -1,5 +1,9 @@
 import { apiClient } from "./api/client";
 
+export const getAdminDashboard = async () => {
+  return apiClient("/admin/dashboard");
+};
+
 export const getAdminBookings = async () => {
   return apiClient("/admin/bookings");
 };

@@ -9,12 +9,16 @@ import {
 export const adminLogin = async (email, password) => {
   const data = await apiClient("/auth/login", {
     method: "POST",
-    body: JSON.stringify({
+    body: {
       email,
       password,
-    }),
+    },
   });
-    console.log("Login response:", data.hotelId);
+
+  if (!data?.token || !data?.user) {
+    throw new Error("The server returned an incomplete login response.");
+  }
+
   if (data.user?.role !== "HOTEL_ADMIN") {
     throw new Error(
       "This account does not have hotel manager access"

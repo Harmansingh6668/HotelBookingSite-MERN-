@@ -4,98 +4,54 @@ const mongoose = require("mongoose");
 
 const Hotel = require("../modules/hotels/hotel.model");
 
+// Add or edit hotel entries here before running `npm run seed:hotels`.
 const hotels = [
   {
-    name: "Grand Palace Hotel",
-    description:
-      "A comfortable luxury hotel located in the heart of the city.",
-    address: "MG Road",
-    city: "Delhi",
-    country: "India",
-    images: [
-      "https://example.com/hotel1.jpg",
-      "https://example.com/hotel2.jpg",
-    ],
-    amenities: [
-      "Free WiFi",
-      "Swimming Pool",
-      "Parking",
-      "Restaurant",
-    ],
-    rating: 4.5,
-    reviewCount: 120,
-    status: "ACTIVE",
-  },
-
-  {
-    name: "Royal Heritage Hotel",
-    description:
-      "A beautiful hotel offering comfortable rooms and modern facilities.",
-    address: "Mall Road",
-    city: "Amritsar",
-    country: "India",
-    images: [
-      "https://example.com/hotel3.jpg",
-      "https://example.com/hotel4.jpg",
-    ],
-    amenities: [
-      "Free WiFi",
-      "Parking",
-      "Restaurant",
-    ],
-    rating: 4.2,
-    reviewCount: 85,
-    status: "ACTIVE",
-  },
-
-  {
-    name: "City View Hotel",
-    description:
-      "A modern hotel with excellent city views and comfortable rooms.",
-    address: "Sector 17",
-    city: "Chandigarh",
-    country: "India",
-    images: [
-      "https://example.com/hotel5.jpg",
-    ],
-    amenities: [
-      "Free WiFi",
-      "Gym",
-      "Parking",
-    ],
-    rating: 4.0,
-    reviewCount: 64,
-    status: "ACTIVE",
-  },
+  hotelName: "Golden City Residency",
+  description: "A modern and comfortable city hotel designed for families, couples, and business travellers visiting Amritsar. The property provides spacious rooms and convenient access to major attractions.",
+  address: "45 Hall Bazaar Road",
+  city: "Amritsar",
+  country: "India",
+  managerName: "Harpreet Singh",
+  managerEmail: "harpreetsingh@gmail.com",
+  managerPassword: "123456"
+}
+  
 ];
 
 const seedHotels = async () => {
   try {
+    if (!process.env.MONGO_URI) {
+      throw new Error("MONGO_URI is not set. Configure it in the backend .env file.");
+    }
+
     await mongoose.connect(process.env.MONGO_URI);
 
     console.log("MongoDB connected");
 
     for (const hotel of hotels) {
-      const existingHotel = await Hotel.findOne({
-        name: hotel.name,
-      });
+      const result = await Hotel.updateOne(
+        { name: hotel.name },
+        { $setOnInsert: hotel },
+        { upsert: true },
+      );
 
-      if (existingHotel) {
+      if (result.upsertedCount === 0) {
         console.log(`${hotel.name} already exists`);
         continue;
       }
-
-      await Hotel.create(hotel);
 
       console.log(`${hotel.name} created`);
     }
 
     console.log("Hotel seeding completed");
-
-    await mongoose.connection.close();
   } catch (error) {
     console.error("Hotel seed failed:", error.message);
-    process.exit(1);
+    process.exitCode = 1;
+  } finally {
+    if (mongoose.connection.readyState !== 0) {
+      await mongoose.connection.close();
+    }
   }
 };
 
