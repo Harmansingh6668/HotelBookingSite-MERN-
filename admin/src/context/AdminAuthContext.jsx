@@ -1,11 +1,18 @@
-import { createContext, useContext, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 import {
   adminLogin,
   getAdminToken,
   getAdminUser,
-  clearAdminSession as logoutAdmin,
+  clearAdminSession  ,
 } from "../services/api/adminAuth";
 import { saveAdminSession } from "../services/api/storage";
+import { ADMIN_SESSION_EXPIRED_EVENT } from "../services/api/client";
 
 const AdminAuthContext = createContext(null);
 
@@ -18,16 +25,21 @@ export function AdminAuthProvider({ children }) {
 
     setToken(data.token);
     setUser(data.user);
-
     return data;
   };
 
-  const logout = () => {
-    logoutAdmin();
+  const logout = useCallback(() => {
 
     setToken(null);
     setUser(null);
-  };
+  }, []);
+
+  useEffect(() => {
+    window.addEventListener(ADMIN_SESSION_EXPIRED_EVENT, logout);
+    return () => {
+      window.removeEventListener(ADMIN_SESSION_EXPIRED_EVENT, logout);
+    };
+  }, [logout]);
 
   const updateUser = (updatedUser) => {
     setUser(updatedUser);

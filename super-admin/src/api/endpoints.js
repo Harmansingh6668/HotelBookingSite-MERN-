@@ -31,4 +31,22 @@ export const ENDPOINTS = {
 
   // Reviews
   reviews: "/reviews",
+
+  superAdmin: {
+    dashboard: "/super-admin/dashboard",
+
+    hotels: "/super-admin/hotels",
+    hotelById: (id) => `/super-admin/hotels/${id}`,
+    hotelStatus: (id) => `/super-admin/hotels/${id}/status`,
+
+    createHotelAdmin: "/super-admin/hotel-admins",
+
+    hotelAdmins: "/super-admin/hotel-admins",
+    hotelAdminById: (id) => `/super-admin/hotel-admins/${id}`,
+    hotelAdminStatus: (id) =>
+      `/super-admin/hotel-admins/${id}/status`,
+
+    bookings: "/super-admin/bookings",
+    bookingById: (id) => `/super-admin/bookings/${id}`,
+  },
 };

@@ -1,4 +1,5 @@
 const adminService = require("./admin.service");
+const adminImageService = require("./admin.image.service");
 
 
 // --------------------------------
@@ -70,9 +71,33 @@ const updateHotel = async (req, res) => {
   }
 };
 
+const uploadHotelImage = async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({
+      success: false,
+      message: "Choose an image to upload.",
+    });
+  }
+
+  try {
+    const image = await adminImageService.uploadHotelImage(req.user, req.file);
+
+    return res.status(201).json({
+      success: true,
+      image,
+    });
+  } catch (error) {
+    return res.status(error.statusCode || 502).json({
+      success: false,
+      message: error.message || "Unable to upload hotel image.",
+    });
+  }
+};
+
 
 module.exports = {
-    getDashboard,
+  getDashboard,
   getHotel,
   updateHotel,
+  uploadHotelImage,
 };

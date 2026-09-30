@@ -1,6 +1,4 @@
 import {
-  ArrowDownRight,
-  ArrowUpRight,
   BedDouble,
   CalendarCheck,
   CalendarDays,
@@ -9,10 +7,12 @@ import {
   LogIn,
   LogOut,
   MoreHorizontal,
-  Users,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { getAdminBookings } from "../services/booking.service";
+import {
+  getAdminBookings,
+  getAdminDashboard,
+} from "../services/booking.service";
 import { getAdminRooms } from "../services/room.service";
 
 const statDefinitions = [
@@ -44,25 +44,7 @@ function StatCard({ stat }) {
           <Icon size={20} strokeWidth={1.8} />
         </div>
 
-        {stat.positive !== null && (
-          <div
-            className={`flex items-center gap-1 text-xs font-medium ${
-              stat.positive
-                ? "text-[var(--color-success)]"
-                : "text-[var(--color-danger)]"
-            }`}
-          >
-            {stat.positive ? (
-              <ArrowUpRight size={14} />
-            ) : (
-              <ArrowDownRight size={14} />
-            )}
-
-            {stat.change}
-          </div>
-        )}
-
-        {stat.positive === null && (
+        {stat.change && (
           <span className="text-xs font-medium text-[var(--color-text-muted)]">
             {stat.change}
           </span>
@@ -81,6 +63,10 @@ function StatCard({ stat }) {
 }
 
 function StatusBadge({ status }) {
+  const label =
+    status?.charAt(0).toUpperCase() +
+      status?.slice(1).toLowerCase() || "Unknown";
+
   const styles = {
     Confirmed:
       "bg-[#EAF5EF] text-[var(--color-success)]",
@@ -93,10 +79,11 @@ function StatusBadge({ status }) {
   return (
     <span
       className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${
-        styles[status] || "bg-[var(--color-surface-muted)] text-[var(--color-text-secondary)]"
+        styles[label] ||
+        "bg-[var(--color-surface-muted)] text-[var(--color-text-secondary)]"
       }`}
     >
-      {status}
+      {label}
     </span>
   );
 }
@@ -147,7 +134,7 @@ function ActivityTable({ title, icon: Icon, data, actionText }) {
           <tbody>
             {data.map((item) => (
               <tr
-                key={`${item.guest}-${item.room}`}
+                key={item.id}
                 className="border-b border-[var(--color-border)] last:border-0 hover:bg-[var(--color-surface-muted)]"
               >
                 <td className="px-5 py-4">
@@ -180,8 +167,26 @@ function ActivityTable({ title, icon: Icon, data, actionText }) {
   );
 }
 
-function BookingChart() {
-  const bars = [38, 52, 46, 70, 58, 82, 64];
+function BookingChart({ bookings }) {
+  const today = new Date();
+  const bars = Array.from({ length: 7 }, (_, index) => {
+    const date = new Date(today);
+    date.setHours(0, 0, 0, 0);
+    date.setDate(today.getDate() - (6 - index));
+
+    return {
+      label: date.toLocaleDateString("en-IN", {
+        weekday: "short",
+      }),
+      value: bookings.filter((booking) => {
+        const bookingDate = new Date(
+          booking.createdAt || booking.checkInDate
+        );
+        return bookingDate.toDateString() === date.toDateString();
+      }).length,
+    };
+  });
+  const maximum = Math.max(...bars.map((bar) => bar.value), 1);
 
   return (
     <div className="rounded-2xl border border-[var(--color-border)] bg-white p-5">
@@ -207,20 +212,22 @@ function BookingChart() {
       </div>
 
       <div className="mt-8 flex h-56 items-end gap-3 sm:gap-5">
-        {bars.map((height, index) => (
+        {bars.map((bar) => (
           <div
-            key={index}
+            key={bar.label}
             className="flex h-full flex-1 flex-col items-center justify-end gap-2"
           >
             <div className="flex w-full flex-1 items-end">
               <div
                 className="w-full rounded-t-lg bg-[var(--color-primary)] opacity-90 transition hover:opacity-100"
-                style={{ height: `${height}%` }}
+                style={{
+                  height: `${Math.max((bar.value / maximum) * 100, 4)}%`,
+                }}
               />
             </div>
 
             <span className="text-xs text-[var(--color-text-muted)]">
-              {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][index]}
+              {bar.label}
             </span>
           </div>
         ))}
@@ -278,7 +285,9 @@ function RoomStatus({ rooms: roomData }) {
 
       <div className="mt-6 space-y-5">
         {rooms.map((room) => {
-          const percentage = (room.count / room.total) * 100;
+          const percentage = room.total
+            ? (room.count / room.total) * 100
+            : 0;
 
           return (
             <div key={room.label}>
@@ -309,16 +318,22 @@ function RoomStatus({ rooms: roomData }) {
     </div>
   );
 }
-import { useHotel } from "../context/hotelContext";
+import { useHotel } from "../context/HotelContext";
 function Dashboard() {
-  const { hotel, hotelError } = useHotel();
+  const { hotel, error: hotelError } = useHotel();
   const [bookings, setBookings] = useState([]);
   const [rooms, setRooms] = useState([]);
+  const [dashboardStats, setDashboardStats] = useState(null);
   const [dataError, setDataError] = useState("");
 
   useEffect(() => {
-    Promise.all([getAdminBookings(), getAdminRooms()])
-      .then(([bookingResponse, roomResponse]) => {
+    Promise.all([
+      getAdminDashboard(),
+      getAdminBookings(),
+      getAdminRooms(),
+    ])
+      .then(([dashboardResponse, bookingResponse, roomResponse]) => {
+        setDashboardStats(dashboardResponse.dashboard?.statistics || null);
         setBookings(bookingResponse.bookings || []);
         setRooms(
           (roomResponse.rooms || []).map((room) => ({
@@ -346,15 +361,16 @@ function Dashboard() {
   const activityRows = (dateField, status) =>
     bookings
       .filter((booking) => isToday(booking[dateField]))
-      .map((booking) => {
+      .map((booking, index) => {
         const firstRoom = booking.rooms?.[0];
         return {
+          id: booking._id || `${dateField}-${index}`,
           guest: booking.userId?.name || "Not available",
           room: String(firstRoom?.roomId?.roomNumber ?? "Not available"),
           guests:
             booking.rooms?.reduce((total, room) => total + (room.guests || 0), 0) || 0,
           time: formatTime(booking[dateField]),
-          status: status || (booking.status || "Not available").toLowerCase(),
+          status: status || booking.status || "Not available",
         };
       });
   const checkIns = activityRows("checkInDate");
@@ -367,26 +383,46 @@ function Dashboard() {
   const stats = statDefinitions.map((definition, index) => ({
     ...definition,
     value: [
-      bookings.length,
-      `₹${bookings.reduce((total, booking) => total + (booking.totalAmount || 0), 0).toLocaleString("en-IN")}`,
+      dashboardStats?.totalBookings ?? bookings.length,
+      `₹${bookings
+        .reduce(
+          (total, booking) =>
+            total + (Number(booking.totalAmount) || 0),
+          0
+        )
+        .toLocaleString("en-IN")}`,
       `${rooms.length ? Math.round((occupiedRooms / rooms.length) * 100) : 0}%`,
-      `${availableRooms} / ${rooms.length}`,
+      `${dashboardStats?.availableRooms ?? availableRooms} / ${
+        dashboardStats?.totalRooms ?? rooms.length
+      }`,
     ][index],
-    change: index === 3 ? "Today" : "",
-    positive: null,
+    change: index === 3 ? "Current inventory" : "",
   }));
-  
+
+  const greeting =
+    today.getHours() < 12
+      ? "Good morning"
+      : today.getHours() < 18
+        ? "Good afternoon"
+        : "Good evening";
+  const formattedDate = today.toLocaleDateString("en-IN", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+
   return (
     <div className="mx-auto max-w-[1600px]">
       {/* Header */}
-      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+      <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-start">
         <div>
           <p className="text-sm font-medium text-[var(--color-gold)]">
-            Monday, 21 September 2026
+            {formattedDate}
           </p>
 
           <h1 className="mt-1 text-2xl font-semibold tracking-tight text-[var(--color-text-primary)] sm:text-3xl">
-            Good morning, Manager 👋
+            {greeting}, Manager
           </h1>
 
           <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
@@ -408,59 +444,30 @@ function Dashboard() {
         </div>
 
         {hotel && (
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="w-fit rounded-[10px] border border-[var(--color-primary)] px-4 py-2.5 text-sm font-medium text-[var(--color-primary)]">
-              {hotel.name}
+          <div className="max-w-xl rounded-2xl border border-[var(--color-border)] bg-white p-4 shadow-sm">
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="text-base font-semibold text-[var(--color-text-primary)]">
+                {hotel.name}
+              </h2>
+              <span
+                className={`rounded-full px-3 py-1 text-xs font-medium ${
+                  hotel.status === "ACTIVE"
+                    ? "bg-[#EAF5EF] text-[var(--color-success)]"
+                    : "bg-[var(--color-surface-muted)] text-[var(--color-text-secondary)]"
+                }`}
+              >
+                {hotel.status}
+              </span>
             </div>
-  
-            <span
-              className={`rounded-full px-3 py-1 text-xs font-medium ${
-                hotel.status === "ACTIVE"
-                  ? "bg-[#EAF5EF] text-[var(--color-success)]"
-                  : "bg-[var(--color-surface-muted)] text-[var(--color-text-secondary)]"
-              }`}
-            >
-              {hotel.status}
-            </span>
-            
-            {hotel && (
-  <div className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-[var(--color-text-secondary)]">
-    <span>{hotel.address}</span>
-    <span>•</span>
-    <span>{hotel.city}</span>
-    <span>•</span>
-    <span>{hotel.country}</span>
-  </div>
-)}
-{hotel && (
-  <div className="mt-3 flex items-center gap-2 text-sm">
-    <span className="font-medium text-[var(--color-text-primary)]">
-      ★ {hotel.rating}
-    </span>
-
-    <span className="text-[var(--color-text-muted)]">
-      ({hotel.reviewsCount} reviews)
-    </span>
-  </div>
-)}
-{hotel && hotel.amenities?.length > 0 && (
-  <div className="mt-4 flex flex-wrap gap-2">
-    {hotel.amenities.map((amenity) => (
-      <span
-        key={amenity}
-        className="rounded-full bg-[var(--color-surface-muted)] px-3 py-1.5 text-xs font-medium text-[var(--color-text-secondary)]"
-      >
-        {amenity}
-      </span>
-    ))}
-  </div>
-)}
-{hotel && hotel.description && (
-  <p className="mt-4 max-w-2xl text-sm leading-6 text-[var(--color-text-secondary)]">
-    {hotel.description}
-  </p>
-)}
-            </div>
+            <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
+              {[hotel.address, hotel.city, hotel.country]
+                .filter(Boolean)
+                .join(" • ") || "Hotel details unavailable"}
+            </p>
+            <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
+              ★ {hotel.rating ?? 0} ({hotel.reviewsCount ?? 0} reviews)
+            </p>
+          </div>
         )}
         </div>
       {/* KPI Cards */}
@@ -520,7 +527,7 @@ function Dashboard() {
               </p>
 
               <p className="mt-1 text-xl font-semibold text-[var(--color-text-primary)]">
-                {pendingActions || 0}
+                {dashboardStats?.pendingBookings ?? pendingActions}
               </p>
             </div>
           </div>
@@ -529,7 +536,7 @@ function Dashboard() {
 
       {/* Chart + Room Status */}
       <div className="mt-6 grid gap-6 xl:grid-cols-[1.7fr_1fr]">
-        <BookingChart />
+        <BookingChart bookings={bookings} />
         <RoomStatus rooms={rooms} />
       </div>
 

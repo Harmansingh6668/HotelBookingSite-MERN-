@@ -6,6 +6,7 @@ import {
   Search,
 } from "lucide-react";
 import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 import HotelCard from "../../components/hotels/HotelCard";
 import { useHotels } from "../../hooks/useHotels";
@@ -21,7 +22,7 @@ function Hotels() {
 
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("ALL");
-
+ const navigate = useNavigate();
   const filteredHotels = useMemo(() => {
     const query = search.trim().toLowerCase();
 
@@ -88,6 +89,7 @@ function Hotels() {
 
           <button
             type="button"
+            onClick={() => navigate("/hotels/add")} 
             className="inline-flex items-center gap-2 rounded-lg bg-emerald-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-800"
           >
             <Plus size={17} />

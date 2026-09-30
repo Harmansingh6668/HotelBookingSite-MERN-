@@ -7,6 +7,10 @@ const allowRoles = require("../middleware/role.middleware");
 const roomController = require("./admin.room.controller");
 const bookingController = require("./admin.booking.controller");
 const reviewController = require("./admin.review.controller");
+const {
+  uploadHotelImage,
+  uploadRoomImage,
+} = require("./admin.upload.middleware");
 const router = express.Router();
 
 // Dashboard
@@ -32,11 +36,26 @@ router.put(
   allowRoles("HOTEL_ADMIN", "SUPER_ADMIN"),
   adminController.updateHotel
 );
+router.post(
+  "/hotel/images",
+  authMiddleware,
+  allowRoles("HOTEL_ADMIN", "SUPER_ADMIN"),
+  uploadHotelImage,
+  adminController.uploadHotelImage
+);
 router.get(
   "/rooms",
   authMiddleware,
   allowRoles("HOTEL_ADMIN", "SUPER_ADMIN"),
   roomController.getRooms
+);
+
+router.post(
+  "/rooms/images",
+  authMiddleware,
+  allowRoles("HOTEL_ADMIN", "SUPER_ADMIN"),
+  uploadRoomImage,
+  roomController.uploadRoomImage
 );
 
 router.post(

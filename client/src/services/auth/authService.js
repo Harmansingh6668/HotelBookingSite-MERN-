@@ -17,6 +17,7 @@ const API_BASE_URL =
 function persistSession(payload = {}) {
   const token =
     payload.token || payload.accessToken || payload.data?.token || null;
+  
   const user = payload.user || payload.data?.user || null;
 
   if (token) {
@@ -61,7 +62,7 @@ export async function loginRequest({ email, password }) {
     method: "POST",
     body: JSON.stringify({ email: email.trim(), password }),
   });
-
+  console.log("loginRequest data:", data);
   return persistSession(data);
 }
 

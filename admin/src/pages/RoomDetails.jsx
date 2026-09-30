@@ -53,6 +53,7 @@ function RoomDetails() {
   const [fetchedRoom, setFetchedRoom] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const incomingAmenities = fetchedRoom?.amenities || location.state?.room?.amenities;
   const detailAmenities = Array.isArray(incomingAmenities)
     ? incomingAmenities.map((amenity) => ({
@@ -73,14 +74,22 @@ function RoomDetails() {
           status: fetchedRoom.status,
           bed: fetchedRoom.bedType,
           amenities: fetchedRoom.amenities,
+          images: fetchedRoom.images,
         }
       : {}),
     amenities: detailAmenities,
   };
+  const roomImages = Array.isArray(displayedRoom.images)
+    ? displayedRoom.images.filter((image) => typeof image === "string" && image.trim())
+    : [];
+  const selectedImage = roomImages[selectedImageIndex] || roomImages[0];
 
   useEffect(() => {
     getAdminRoomById(id)
-      .then(({ room }) => setFetchedRoom(room))
+      .then(({ room }) => {
+        setFetchedRoom(room);
+        setSelectedImageIndex(0);
+      })
       .catch((fetchError) => setError(fetchError.message))
       .finally(() => setLoading(false));
   }, [id]);
@@ -166,7 +175,7 @@ function RoomDetails() {
                 .toLowerCase()
                 .replace(/(^|_)\w/g, (match) => match.replace("_", "").toUpperCase()),
               amenities: displayedRoom.amenities.map((amenity) => amenity.name),
-              images: [],
+              images: displayedRoom.images || [],
             },
           }}
           className="inline-flex w-fit items-center gap-2 rounded-[10px] bg-[var(--color-primary)] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[var(--color-primary-dark)]"
@@ -180,33 +189,46 @@ function RoomDetails() {
       <div className="mt-7 grid gap-6 lg:grid-cols-[1.35fr_1fr]">
         {/* Images */}
         <section className="overflow-hidden rounded-2xl border border-[var(--color-border)] bg-white shadow-sm">
-          <div className="h-72 sm:h-96">
-            <img
-              src="https://images.unsplash.com/photo-1618773928121-c32242e63f39?auto=format&fit=crop&w=1200&q=80"
-              alt={`Room ${displayedRoom.number}`}
-              className="h-full w-full object-cover"
-            />
-          </div>
+          {selectedImage ? (
+            <>
+              <div className="h-72 bg-[var(--color-surface-muted)] sm:h-96">
+                <img
+                  src={selectedImage}
+                  alt={`Room ${displayedRoom.number}`}
+                  className="h-full w-full object-cover"
+                />
+              </div>
 
-          <div className="grid grid-cols-3 gap-2 p-3">
-            <img
-              src="https://images.unsplash.com/photo-1618773928121-c32242e63f39?auto=format&fit=crop&w=500&q=80"
-              alt="Room interior"
-              className="h-20 w-full rounded-lg object-cover"
-            />
-
-            <img
-              src="https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=500&q=80"
-              alt="Hotel room"
-              className="h-20 w-full rounded-lg object-cover"
-            />
-
-            <img
-              src="https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=500&q=80"
-              alt="Room details"
-              className="h-20 w-full rounded-lg object-cover"
-            />
-          </div>
+              {roomImages.length > 1 && (
+                <div className="grid grid-cols-3 gap-2 p-3 sm:grid-cols-4">
+                  {roomImages.map((image, index) => (
+                    <button
+                      key={`${image}-${index}`}
+                      type="button"
+                      onClick={() => setSelectedImageIndex(index)}
+                      aria-label={`Show room image ${index + 1}`}
+                      aria-pressed={selectedImageIndex === index}
+                      className={`overflow-hidden rounded-lg border-2 ${
+                        selectedImageIndex === index
+                          ? "border-[var(--color-primary)]"
+                          : "border-transparent"
+                      }`}
+                    >
+                      <img
+                        src={image}
+                        alt={`Room ${displayedRoom.number}, photo ${index + 1}`}
+                        className="h-20 w-full object-cover"
+                      />
+                    </button>
+                  ))}
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="flex h-72 items-center justify-center bg-[var(--color-surface-muted)] px-6 text-center text-sm text-[var(--color-text-secondary)] sm:h-96">
+              No room images have been added yet.
+            </div>
+          )}
         </section>
 
         {/* Room summary */}

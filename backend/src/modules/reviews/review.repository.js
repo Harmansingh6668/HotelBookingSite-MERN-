@@ -75,7 +75,7 @@ const updateReview = async (
     },
     reviewData,
     {
-      new: true,
+      returnDocument: "after",
       runValidators: true,
     }
   );

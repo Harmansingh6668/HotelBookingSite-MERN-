@@ -1,6 +1,6 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { login as loginApi } from "../api/auth.api";
-
+import {ADMIN_SESSION_EXPIRED_EVENT} from "../api/client";
 const AuthContext = createContext(null);
 
 const TOKEN_KEY = "aauji_auth_token";
@@ -20,6 +20,13 @@ export function AuthProvider({ children }) {
       return null;
     }
   });
+  const logout =  useCallback(() => {
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(USER_KEY);
+
+    setToken(null);
+    setUser(null);
+  }, []);
 
   const [loading, setLoading] = useState(true);
 
@@ -27,6 +34,13 @@ export function AuthProvider({ children }) {
     setLoading(false);
   }, []);
 
+  useEffect(() => {
+    window.addEventListener(ADMIN_SESSION_EXPIRED_EVENT, logout);
+    return () => {
+      window.removeEventListener(ADMIN_SESSION_EXPIRED_EVENT, logout);
+    };
+  }, [logout]);
+  
   const login = async (email, password) => {
     const response = await loginApi({
       email,
@@ -64,13 +78,6 @@ export function AuthProvider({ children }) {
     return receivedUser;
   };
 
-  const logout = () => {
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(USER_KEY);
-
-    setToken(null);
-    setUser(null);
-  };
 
   const isAuthenticated = Boolean(token && user);
 

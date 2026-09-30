@@ -30,13 +30,17 @@ const initialBooking = {
 };
 
 export function BookingProvider({ children }) {
+
   const [booking, setBooking] = useState(initialBooking);
+  
   const setHotel = useCallback((hotel) => {
     setBooking((prev) => ({ ...prev, hotel }));
   }, []);
+  
   const setSelectedRooms = useCallback((selectedRooms) => {
     setBooking((prev) => ({ ...prev, selectedRooms }));
   }, []);
+  
   const setSearch = useCallback((searchData) => {
     setBooking((prev) => {
       const nextSearch = { ...prev.search, ...searchData };
@@ -47,6 +51,8 @@ export function BookingProvider({ children }) {
       return hasChanged ? { ...prev, search: nextSearch } : prev;
     });
   }, []);
+  
+  
   return (
     <BookingContext.Provider
       value={{
