@@ -50,6 +50,9 @@ function Dashboard() {
   const {
     hotels,
     hotelCount,
+    bookingCount,
+    customerCount,
+    revenue,
     loading,
     error,
     refresh,
@@ -126,21 +129,25 @@ function Dashboard() {
 
         <StatCard
           title="Total Bookings"
-          value="—"
+          value={loading ? "..." : bookingCount}
           description="All platform bookings"
           icon={CalendarCheck2}
         />
 
         <StatCard
           title="Customers"
-          value="—"
+          value={loading ? "..." : customerCount}
           description="Registered customers"
           icon={Users}
         />
 
         <StatCard
           title="Revenue"
-          value="—"
+          value={
+            loading
+              ? "..."
+              : `₹${Number(revenue).toLocaleString("en-IN")}`
+          }
           description="Platform revenue"
           icon={CircleDollarSign}
         />

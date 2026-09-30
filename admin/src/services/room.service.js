@@ -22,6 +22,16 @@ export const updateAdminRoom = async (id, roomData) => {
   });
 };
 
+export const uploadAdminRoomImage = async (file) => {
+  const formData = new FormData();
+  formData.append("image", file);
+
+  return apiClient("/admin/rooms/images", {
+    method: "POST",
+    body: formData,
+  });
+};
+
 export const deleteAdminRoom = async (id) => {
   return apiClient(`/admin/rooms/${id}`, {
     method: "DELETE",

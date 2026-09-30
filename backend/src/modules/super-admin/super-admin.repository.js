@@ -5,6 +5,31 @@ const Booking = require("../bookings/booking.model");
 const Review = require("../reviews/review.model");
 
 // --------------------------------
+// Create hotel and hotel admin
+// --------------------------------
+
+const findUserByEmail = async (email) => {
+  return await User.findOne({
+    email: email.trim().toLowerCase(),
+  });
+};
+
+const createHotel = async (hotelData) => {
+  return await Hotel.create(hotelData);
+};
+
+const createHotelAdmin = async (adminData) => {
+  return await User.create({
+    ...adminData,
+    email: adminData.email.trim().toLowerCase(),
+  });
+};
+
+const deleteHotel = async (hotelId) => {
+  return await Hotel.findByIdAndDelete(hotelId);
+};
+
+// --------------------------------
 // Dashboard statistics
 // --------------------------------
 
@@ -255,7 +280,7 @@ const updateHotelStatus = async (
       status,
     },
     {
-      new: true,
+      returnDocument: "after",
       runValidators: true,
     }
   );
@@ -313,7 +338,7 @@ const updateHotelAdminStatus = async (
       status,
     },
     {
-      new: true,
+      returnDocument: "after",
       runValidators: true,
     }
   ).populate(
@@ -416,6 +441,10 @@ const deleteReview = async (reviewId) => {
 
 
 module.exports = {
+  findUserByEmail,
+  createHotel,
+  createHotelAdmin,
+  deleteHotel,
   getDashboardStatistics,
   getAllHotels,
   getHotelById,

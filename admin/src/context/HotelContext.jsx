@@ -1,17 +1,26 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 import { getAdminHotel } from "../services/hotel.service";
+import { useAdminAuth } from "./AdminAuthContext";
 
 const HotelContext = createContext(null);
 
 export function HotelProvider({ children }) {
+  const { isAuthenticated } = useAdminAuth();
   const [hotel, setHotel] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const fetchHotel = async () => {
+  const fetchHotel = useCallback(async () => {
     try {
       setLoading(true);
       setError("");
+      setHotel(null);
 
       const data = await getAdminHotel();
 
@@ -21,18 +30,24 @@ export function HotelProvider({ children }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    fetchHotel();
-  }, []);
+    if (!isAuthenticated) return undefined;
+
+    const timeoutId = window.setTimeout(() => {
+      void fetchHotel();
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [fetchHotel, isAuthenticated]);
 
   return (
     <HotelContext.Provider
       value={{
-        hotel,
-        loading,
-        error,
+        hotel: isAuthenticated ? hotel : null,
+        loading: isAuthenticated && loading,
+        error: isAuthenticated ? error : "",
         refreshHotel: fetchHotel,
         setHotel,
       }}

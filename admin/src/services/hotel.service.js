@@ -10,3 +10,13 @@ export const updateAdminHotel = async (hotelData) => {
     body: hotelData,
   });
 };
+
+export const uploadAdminHotelImage = async (file) => {
+  const formData = new FormData();
+  formData.append("image", file);
+
+  return apiClient("/admin/hotel/images", {
+    method: "POST",
+    body: formData,
+  });
+};

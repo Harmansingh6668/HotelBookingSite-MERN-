@@ -107,6 +107,7 @@ const getHotel = async (user) => {
 
   return hotel;
 };
+
 const updateHotel = async (user, updateData) => {
   if (!user.hotelId) {
     throw new Error("Hotel is not assigned to this admin");
@@ -117,6 +118,10 @@ const updateHotel = async (user, updateData) => {
   if (!hotel) {
     throw new Error("Hotel not found");
   }
+
+  console.log("UPDATE DATA RECEIVED:", updateData);
+  console.log("IMAGE RECEIVED:", updateData.image);
+  console.log("IMAGES RECEIVED:", updateData.images);
 
   // --------------------------------
   // Update hotel basic information
@@ -146,9 +151,13 @@ const updateHotel = async (user, updateData) => {
   // Update images
   // --------------------------------
 
-  if (updateData.images !== undefined) {
-    hotel.images = updateData.images;
+  if (updateData.image !== undefined) {
+    hotel.image = Array.isArray(updateData.image)
+      ? updateData.image
+      : [updateData.image];
   }
+
+  console.log("IMAGE BEFORE SAVE:", hotel.image);
 
   // --------------------------------
   // Update amenities
@@ -159,7 +168,7 @@ const updateHotel = async (user, updateData) => {
   }
 
   // --------------------------------
-  // Check whether profile is complete
+  // Profile completion
   // --------------------------------
 
   const hasName =
@@ -181,22 +190,114 @@ const updateHotel = async (user, updateData) => {
     hotel.country &&
     hotel.country.trim() !== "";
 
-  if (
+  hotel.profileCompleted =
     hasName &&
     hasDescription &&
     hasAddress &&
     hasCity &&
-    hasCountry
-  ) {
-    hotel.profileCompleted = true;
-  } else {
-    hotel.profileCompleted = false;
-  }
+    hasCountry;
 
   await hotel.save();
 
+  console.log("IMAGE AFTER SAVE:", hotel.image);
+
   return hotel;
 };
+
+// const updateHotel = async (user, updateData) => {
+//   if (!user.hotelId) {
+//     throw new Error("Hotel is not assigned to this admin");
+//   }
+
+//   const hotel = await Hotel.findById(user.hotelId);
+
+//   if (!hotel) {
+//     throw new Error("Hotel not found");
+//   }
+
+//   // --------------------------------
+//   // Update hotel basic information
+//   // --------------------------------
+
+//   if (updateData.name !== undefined) {
+//     hotel.name = updateData.name;
+//   }
+
+//   if (updateData.description !== undefined) {
+//     hotel.description = updateData.description;
+//   }
+
+//   if (updateData.address !== undefined) {
+//     hotel.address = updateData.address;
+//   }
+
+//   if (updateData.city !== undefined) {
+//     hotel.city = updateData.city;
+//   }
+
+//   if (updateData.country !== undefined) {
+//     hotel.country = updateData.country;
+//   }
+
+//   // --------------------------------
+//   // Update images
+//   // --------------------------------
+
+//   const images = updateData.image ?? updateData.images;
+//   if (images !== undefined) {
+//     hotel.image = images;
+//   }
+//   //  if (updateData.images !== undefined) {
+//   //   hotel.images = updateData.images;
+//   // }
+
+//   // --------------------------------
+//   // Update amenities
+//   // --------------------------------
+
+//   if (updateData.amenities !== undefined) {
+//     hotel.amenities = updateData.amenities;
+//   }
+
+//   // --------------------------------
+//   // Check whether profile is complete
+//   // --------------------------------
+
+//   const hasName =
+//     hotel.name && hotel.name.trim() !== "";
+
+//   const hasDescription =
+//     hotel.description &&
+//     hotel.description.trim() !== "";
+
+//   const hasAddress =
+//     hotel.address &&
+//     hotel.address.trim() !== "";
+
+//   const hasCity =
+//     hotel.city &&
+//     hotel.city.trim() !== "";
+
+//   const hasCountry =
+//     hotel.country &&
+//     hotel.country.trim() !== "";
+
+//   if (
+//     hasName &&
+//     hasDescription &&
+//     hasAddress &&
+//     hasCity &&
+//     hasCountry
+//   ) {
+//     hotel.profileCompleted = true;
+//   } else {
+//     hotel.profileCompleted = false;
+//   }
+
+//   await hotel.save();
+
+//   return hotel;
+// };
 
 module.exports = {
     getDashboard,
