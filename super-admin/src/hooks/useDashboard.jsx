@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import {
-  getHotelCount,
+  getDashboardStatistics,
   getHotels,
 } from "../api/dashboard";
 
@@ -8,6 +8,9 @@ export function useDashboard() {
   const [data, setData] = useState({
     hotels: [],
     hotelCount: 0,
+    bookingCount: 0,
+    customerCount: 0,
+    revenue: 0,
   });
 
   const [loading, setLoading] = useState(true);
@@ -18,21 +21,23 @@ export function useDashboard() {
       setLoading(true);
       setError("");
 
-      const [hotelsResponse, hotelCountResponse] =
+      const [dashboardResponse, hotelsResponse] =
         await Promise.all([
+          getDashboardStatistics(),
           getHotels(),
-          getHotelCount(),
         ]);
+
+      const dashboard = dashboardResponse?.dashboard || {};
 
       setData({
         hotels:
           hotelsResponse?.hotels ||
           hotelsResponse?.data ||
           [],
-        hotelCount:
-          hotelCountResponse?.count ??
-          hotelCountResponse?.hotelCount ??
-          0,
+        hotelCount: dashboard.hotels?.total ?? 0,
+        bookingCount: dashboard.bookings?.total ?? 0,
+        customerCount: dashboard.customers?.total ?? 0,
+        revenue: dashboard.revenue?.total ?? 0,
       });
     } catch (err) {
       console.error("Dashboard loading failed:", err);

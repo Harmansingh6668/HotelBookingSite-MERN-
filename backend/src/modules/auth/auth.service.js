@@ -76,7 +76,7 @@ const loginUser = async ({ email, password }) => {
     },
     process.env.JWT_SECRET,
     {
-      expiresIn: "3m",
+      expiresIn: "1h", // Token expires in 1 hour
     }
   );
 

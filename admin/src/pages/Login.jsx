@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { Eye, EyeOff, LockKeyhole, Mail, ShieldCheck } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAdminAuth } from "../context/AdminAuthContext";
 
 function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [showPassword, setShowPassword] = useState(false);
   const { login } = useAdminAuth();
   const [email, setEmail] = useState("");
@@ -14,17 +15,22 @@ function Login() {
   
   const handleSubmit = async (event) => {
     event.preventDefault();
+    if (loading) {
+      return;
+    }
+
     setMessage("");
     setLoading(true);
 
     try {
       await login(email, password);
-      console.log("Login successful");
-      navigate("/dashboard");
+      navigate(location.state?.from?.pathname || "/dashboard", {
+        replace: true,
+      });
     } catch (error) {
       setMessage(error.message || "Login failed. Please try again.");
-    }finally {
-    setLoading(false);
+    } finally {
+      setLoading(false);
     }
   };
 

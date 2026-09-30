@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { ArrowLeft, ImagePlus, X } from "lucide-react";
+import { ArrowLeft, ImagePlus } from "lucide-react";
 import { Link } from "react-router-dom";
+import { uploadAdminRoomImage } from "../../services/room.service";
 
 const ROOM_TYPES = ["SINGLE", "DOUBLE", "DELUXE", "SUITE", "FAMILY"];
 const BED_TYPES = ["SINGLE", "DOUBLE", "QUEEN", "KING"];
@@ -30,11 +31,23 @@ function RoomForm({ initialData = null, isEdit = false, onSubmit }) {
     images: initialData?.images || [],
   });
 
-  const [imagePreviews, setImagePreviews] = useState(
-    initialData?.images || []
-  );
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploadingImages, setIsUploadingImages] = useState(false);
+  const [uploadError, setUploadError] = useState("");
   const [submitError, setSubmitError] = useState("");
+
+  const isFormComplete =
+    formData.roomNumber.trim() !== "" &&
+    Number.isFinite(Number(formData.roomNumber)) &&
+    Number(formData.roomNumber) > 0 &&
+    Boolean(formData.roomType) &&
+    formData.description.trim() !== "" &&
+    Number.isFinite(Number(formData.capacity)) &&
+    Number(formData.capacity) >= 1 &&
+    Boolean(formData.bedType) &&
+    formData.price !== "" &&
+    Number.isFinite(Number(formData.price)) &&
+    Number(formData.price) >= 0;
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -54,25 +67,55 @@ function RoomForm({ initialData = null, isEdit = false, onSubmit }) {
     }));
   };
 
-  const handleImageChange = (e) => {
-    const files = Array.from(e.target.files);
+  const handleImageChange = async (e) => {
+    const files = Array.from(e.target.files || []);
+    e.target.value = "";
 
-    const previews = files.map((file) => ({
-      file,
-      url: URL.createObjectURL(file),
-    }));
+    if (!files.length) return;
 
-    setImagePreviews((prev) => [...prev, ...previews]);
+    setIsUploadingImages(true);
+    setUploadError("");
 
+    try {
+      for (const file of files) {
+        if (file.size > 5 * 1024 * 1024) {
+          throw new Error(`${file.name} is larger than the 5 MB limit.`);
+        }
+
+        const response = await uploadAdminRoomImage(file);
+        if (!response?.image) {
+          throw new Error(`The server did not return an image URL for ${file.name}.`);
+        }
+
+        setFormData((prev) => ({
+          ...prev,
+          images: [...prev.images, response.image],
+        }));
+      }
+    } catch (error) {
+      setUploadError(error.message || "Unable to upload room image.");
+    } finally {
+      setIsUploadingImages(false);
+    }
+  };
+
+  const addImageUrl = () => {
     setFormData((prev) => ({
       ...prev,
-      images: [...prev.images, ...files],
+      images: [...prev.images, ""],
+    }));
+  };
+
+  const updateImageUrl = (index, value) => {
+    setFormData((prev) => ({
+      ...prev,
+      images: prev.images.map((image, imageIndex) =>
+        imageIndex === index ? value : image
+      ),
     }));
   };
 
   const removeImage = (index) => {
-    setImagePreviews((prev) => prev.filter((_, i) => i !== index));
-
     setFormData((prev) => ({
       ...prev,
       images: prev.images.filter((_, i) => i !== index),
@@ -82,12 +125,20 @@ function RoomForm({ initialData = null, isEdit = false, onSubmit }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (!isFormComplete) {
+      setSubmitError("Complete all required room fields before saving.");
+      return;
+    }
+
     try {
       setIsSubmitting(true);
       setSubmitError("");
 
       if (onSubmit) {
-        await onSubmit(formData);
+        await onSubmit({
+          ...formData,
+          images: formData.images.map((image) => image.trim()).filter(Boolean),
+        });
       } else {
         console.log("Room data:", formData);
       }
@@ -163,11 +214,13 @@ function RoomForm({ initialData = null, isEdit = false, onSubmit }) {
             </label>
 
             <input
-              type="text"
+              type="number"
               name="roomNumber"
               value={formData.roomNumber}
               onChange={handleChange}
               placeholder="e.g. 101"
+              min="1"
+              step="1"
               className={inputClass}
               required
             />
@@ -296,6 +349,7 @@ function RoomForm({ initialData = null, isEdit = false, onSubmit }) {
             placeholder="Describe the room, its view, features and overall experience..."
             rows="5"
             className={`${inputClass} resize-none`}
+            required
           />
 
           <p className="mt-2 text-xs text-[var(--color-text-muted)]">
@@ -345,14 +399,23 @@ function RoomForm({ initialData = null, isEdit = false, onSubmit }) {
 
       {/* Images */}
       <section className="rounded-[18px] border border-[var(--color-border)] bg-white p-5 sm:p-6">
-        <div className="mb-6">
-          <h2 className="text-base font-semibold text-[var(--color-text-primary)]">
-            Room Images
-          </h2>
+        <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 className="text-base font-semibold text-[var(--color-text-primary)]">
+              Room Images
+            </h2>
 
-          <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
-            Add photos that represent this room.
-          </p>
+            <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
+              Upload photos to Cloudinary or add image URLs.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={addImageUrl}
+            className="rounded-lg border border-[var(--color-primary)] px-4 py-2 text-sm font-medium text-[var(--color-primary)] hover:bg-[var(--color-primary)]/5"
+          >
+            + Add image URL
+          </button>
         </div>
 
         <label className="flex cursor-pointer flex-col items-center justify-center rounded-[14px] border-2 border-dashed border-[var(--color-border)] bg-[var(--color-surface-muted)] px-6 py-10 text-center transition hover:border-[var(--color-primary)] hover:bg-[var(--color-primary)]/5">
@@ -366,45 +429,73 @@ function RoomForm({ initialData = null, isEdit = false, onSubmit }) {
           </p>
 
           <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
-            PNG, JPG or WEBP
+            JPEG, PNG, WebP, or GIF; maximum 5 MB per photo.
           </p>
 
           <input
             type="file"
-            accept="image/png,image/jpeg,image/webp"
+            accept="image/jpeg,image/png,image/webp,image/gif"
             multiple
             onChange={handleImageChange}
+            disabled={isUploadingImages}
             className="hidden"
           />
         </label>
 
-        {imagePreviews.length > 0 && (
-          <div className="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-            {imagePreviews.map((image, index) => {
-              const imageUrl =
-                typeof image === "string" ? image : image.url;
+        {isUploadingImages && (
+          <p className="mt-3 text-sm text-[var(--color-primary)]">
+            Uploading photos to Cloudinary...
+          </p>
+        )}
+        {uploadError && (
+          <p role="alert" className="mt-3 text-sm text-[var(--color-danger)]">
+            {uploadError}
+          </p>
+        )}
 
-              return (
-                <div
-                  key={index}
-                  className="group relative aspect-[4/3] overflow-hidden rounded-[12px] border border-[var(--color-border)]"
-                >
-                  <img
-                    src={imageUrl}
-                    alt={`Room preview ${index + 1}`}
-                    className="h-full w-full object-cover"
-                  />
-
+        {formData.images.length > 0 && (
+          <div className="mt-5 space-y-4">
+            {formData.images.map((image, index) => (
+              <div
+                key={index}
+                className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-muted)] p-4"
+              >
+                <div className="mb-2 flex items-center justify-between">
+                  <label
+                    htmlFor={`room-image-${index}`}
+                    className="text-sm font-medium text-[var(--color-text-primary)]"
+                  >
+                    Image {index + 1} URL
+                  </label>
                   <button
                     type="button"
                     onClick={() => removeImage(index)}
-                    className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition group-hover:opacity-100"
+                    className="text-sm text-[var(--color-danger)]"
+                    aria-label={`Remove image ${index + 1}`}
                   >
-                    <X size={16} />
+                    Remove
                   </button>
                 </div>
-              );
-            })}
+                <input
+                  id={`room-image-${index}`}
+                  type="url"
+                  value={image}
+                  onChange={(event) => updateImageUrl(index, event.target.value)}
+                  placeholder="https://example.com/room-photo.jpg"
+                  className={inputClass}
+                />
+                {image && (
+                  <img
+                    src={image}
+                    alt={`Room image ${index + 1}`}
+                    className="mt-3 h-40 w-full rounded-lg object-cover"
+                    onError={(event) => {
+                      event.currentTarget.style.display = "none";
+                    }}
+                  />
+                )}
+              </div>
+            ))}
           </div>
         )}
       </section>
@@ -420,7 +511,7 @@ function RoomForm({ initialData = null, isEdit = false, onSubmit }) {
 
         <button
           type="submit"
-          disabled={isSubmitting}
+          disabled={isSubmitting || isUploadingImages || !isFormComplete}
           className="rounded-[10px] bg-[var(--color-primary)] px-5 py-3 text-sm font-medium text-white transition hover:bg-[var(--color-primary-dark)] disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isSubmitting

@@ -1,4 +1,28 @@
 const roomService = require("./admin.room.service");
+const adminImageService = require("./admin.image.service");
+
+const uploadRoomImage = async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({
+      success: false,
+      message: "Choose an image to upload.",
+    });
+  }
+
+  try {
+    const image = await adminImageService.uploadRoomImage(req.user, req.file);
+
+    return res.status(201).json({
+      success: true,
+      image,
+    });
+  } catch (error) {
+    return res.status(error.statusCode || 502).json({
+      success: false,
+      message: error.message || "Unable to upload room image.",
+    });
+  }
+};
 
 const getRooms = async (req, res) => {
   try {
@@ -101,6 +125,7 @@ const deleteRoom = async (req, res) => {
 };
 
 module.exports = {
+  uploadRoomImage,
   getRooms,
   getRoomById,
   createRoom,

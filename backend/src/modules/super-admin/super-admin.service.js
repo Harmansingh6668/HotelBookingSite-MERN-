@@ -14,6 +14,7 @@ const createHotelAdmin = async (data) => {
     password,
 
     hotelName,
+    description,
     address,
     city,
     country,
@@ -43,6 +44,10 @@ const createHotelAdmin = async (data) => {
 
   if (!hotelName) {
     throw new Error("Hotel name is required");
+  }
+
+  if (!description) {
+    throw new Error("Hotel description is required");
   }
 
   if (!address) {
@@ -90,7 +95,7 @@ const createHotelAdmin = async (data) => {
       city,
       country,
 
-      description: "",
+      description,
 
       image: [],
 
