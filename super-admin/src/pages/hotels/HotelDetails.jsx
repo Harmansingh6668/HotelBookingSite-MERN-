@@ -11,7 +11,8 @@ import {
   useParams,
 } from "react-router-dom";
 
-import { getHotelById } from "../../api/hotel.api";
+import { getHotelDetails } from "../../api/hotel.api";
+
 
 function HotelDetails() {
   const { id } = useParams();
@@ -19,6 +20,8 @@ function HotelDetails() {
   const [hotel, setHotel] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [manager, setManager] = useState(null);
+  const [bookings, setBookings] = useState([]);
 
   useEffect(() => {
     const loadHotel = async () => {
@@ -26,20 +29,32 @@ function HotelDetails() {
         setLoading(true);
         setError("");
 
-        const response = await getHotelById(id);
+        const response = await getHotelDetails(id);
 
         const hotelData =
           response?.hotel ||
+          response?.data?.hotel ||
           response?.data ||
           response;
 
         setHotel(hotelData);
+        setManager(
+          response?.hotelAdmin ||
+            response?.data?.hotelAdmin ||
+            hotelData?.manager ||
+            null
+        );
+        setBookings(
+          response?.bookings ||
+            response?.data?.bookings ||
+            []
+        );
       } catch (err) {
         console.error(
           "Failed to load hotel:",
           err
         );
-
+  
         setError(
           err?.data?.message ||
             err?.message ||
@@ -160,15 +175,15 @@ function HotelDetails() {
         <InfoCard
           icon={UserCog}
           title="Manager"
-          value="Not assigned"
-          description="Manager information will be connected when the manager API is available."
+          value={manager?.name || "Not assigned"}
+          description={manager?.email || "No manager is assigned to this hotel."}
         />
 
         <InfoCard
           icon={CalendarDays}
           title="Bookings"
-          value="—"
-          description="Hotel booking statistics will be connected to the booking API."
+          value={bookings.length}
+          description={`${bookings.length} booking${bookings.length === 1 ? "" : "s"} for this hotel`}
         />
 
         <InfoCard
@@ -179,6 +194,63 @@ function HotelDetails() {
         />
 
       </div>
+
+      {/* Bookings */}
+      <section className="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white">
+        <div className="border-b border-slate-100 px-6 py-5">
+          <h2 className="font-semibold text-slate-900">Recent Bookings</h2>
+          <p className="mt-1 text-sm text-slate-500">
+            Reservations made for this hotel.
+          </p>
+        </div>
+
+        {bookings.length === 0 ? (
+          <p className="px-6 py-10 text-center text-sm text-slate-500">
+            No bookings found for this hotel.
+          </p>
+        ) : (
+          <div className="divide-y divide-slate-100">
+            {bookings.map((booking) => (
+              <div
+                key={booking._id}
+                className="grid gap-3 px-6 py-4 sm:grid-cols-[1fr_auto] sm:items-center"
+              >
+                <div>
+                  <p className="text-sm font-semibold text-slate-900">
+                    {booking.userId?.name || "Unknown guest"}
+                  </p>
+                  <p className="mt-1 text-xs text-slate-500">
+                    Booking {String(booking._id || "").slice(-8).toUpperCase()}
+                    {booking.userId?.email ? ` · ${booking.userId.email}` : ""}
+                  </p>
+                  <p className="mt-1 text-xs text-slate-500">
+                    {formatDate(booking.checkInDate)} – {formatDate(booking.checkOutDate)}
+                  </p>
+                </div>
+
+                <div className="flex items-center justify-between gap-4 sm:justify-end">
+                  <div className="text-right">
+                    <p className="text-sm font-semibold text-slate-900">
+                      ₹{Number(booking.totalAmount || 0).toLocaleString("en-IN")}
+                    </p>
+                    <span className={`mt-1 inline-block rounded-full px-2.5 py-1 text-xs font-semibold ${bookingStatusClass(booking.status)}`}>
+                      {booking.status || "UNKNOWN"}
+                    </span>
+                  </div>
+                  {booking._id && (
+                    <Link
+                      to={`/bookings/${booking._id}`}
+                      className="text-sm font-semibold text-emerald-700 hover:underline"
+                    >
+                      View
+                    </Link>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
 
       {/* Raw information */}
       <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-6">
@@ -242,6 +314,25 @@ function HotelDetails() {
 
     </div>
   );
+}
+
+function formatDate(value) {
+  if (!value) return "Not available";
+
+  return new Date(value).toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+function bookingStatusClass(status) {
+  return {
+    CONFIRMED: "bg-emerald-50 text-emerald-700",
+    COMPLETED: "bg-blue-50 text-blue-700",
+    PENDING: "bg-amber-50 text-amber-700",
+    CANCELLED: "bg-red-50 text-red-700",
+  }[status] || "bg-slate-100 text-slate-600";
 }
 
 function InfoCard({
