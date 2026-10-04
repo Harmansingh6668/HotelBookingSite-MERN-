@@ -1,7 +1,17 @@
-const API_BASE_URL = "http://localhost:8080";
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
+const configuredApiBaseUrl = import.meta.env.VITE_API_BASE_URL;
+const API_BASE_URL = (
+  configuredApiBaseUrl || (import.meta.env.DEV ? "http://localhost:8080" : "")
+)
+  .replace(/\/+$/, "")
+  .replace(/\/api$/i, "");
 
 export async function apiClient(endpoint, options = {}) {
+  if (!API_BASE_URL && !import.meta.env.DEV) {
+    throw new Error(
+      "VITE_API_BASE_URL is missing. Set it to your deployed backend URL."
+    );
+  }
+
   
   const token = localStorage.getItem("aauji_auth_token");
   
