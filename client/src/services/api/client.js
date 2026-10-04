@@ -1,20 +1,22 @@
 const configuredApiBaseUrl = import.meta.env.VITE_API_BASE_URL;
+const defaultApiBaseUrl = import.meta.env.DEV
+  ? ""
+  : "https://hotelbookingsite-mern.onrender.com";
+const configuredApiUrlIsLocal =
+  /^https?:\/\/(localhost|127(?:\.\d{1,3}){3})(:\d+)?(?:\/|$)/i.test(
+    configuredApiBaseUrl?.trim() || ""
+  );
 const API_BASE_URL = (
-  configuredApiBaseUrl || (import.meta.env.DEV ? "http://localhost:8080" : "")
+  configuredApiBaseUrl && !(import.meta.env.PROD && configuredApiUrlIsLocal)
+    ? configuredApiBaseUrl
+    : defaultApiBaseUrl
 )
   .replace(/\/+$/, "")
   .replace(/\/api$/i, "");
 
 export async function apiClient(endpoint, options = {}) {
-  if (!API_BASE_URL && !import.meta.env.DEV) {
-    throw new Error(
-      "VITE_API_BASE_URL is missing. Set it to your deployed backend URL."
-    );
-  }
-
-  
   const token = localStorage.getItem("aauji_auth_token");
-  
+
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     headers: {
       "Content-Type": "application/json",
@@ -23,12 +25,12 @@ export async function apiClient(endpoint, options = {}) {
     },
     ...options,
   });
-   if(!response.ok && response.status === 401) {
+  if (!response.ok && response.status === 401) {
     localStorage.removeItem("aauji_auth_token");
     window.location.href = "/login";
   }
   const contentType = response.headers.get("content-type") || "";
-  
+
   const data = contentType.includes("application/json")
     ? await response.json()
     : null;
