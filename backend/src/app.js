@@ -15,16 +15,23 @@ const errorMiddleware = require("./modules/middleware/error.middleware");
 
 const app = express();
 
-const allowedOrigins = [
+const localOrigins = [
   "http://localhost:5173",
   "http://localhost:5174",
   "http://localhost:5175",
 ];
+const configuredOrigins = (process.env.CORS_ORIGINS || "")
+  .split(",")
+  .map((origin) => origin.trim().replace(/\/+$/, ""))
+  .filter(Boolean);
+const allowedOrigins = [
+  ...(process.env.NODE_ENV === "production" ? [] : localOrigins),
+  ...configuredOrigins,
+];
 
 app.use(cors({
   origin: function (origin, callback) {
-
-    if(!origin) {
+    if (!origin) {
       return callback(null, true);
     }
 
@@ -32,9 +39,8 @@ app.use(cors({
       return callback(null, true);
     }
     return callback(new Error("Not allowed by CORS"));
-  },  
+  },
   credentials: true,
-  
 }));
 
 app.use(express.json());
