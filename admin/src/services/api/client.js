@@ -1,7 +1,5 @@
 import { getAdminToken, clearAdminSession } from "./storage";
-
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api";
+import { API_BASE_URL } from "./baseUrl";
 
 export const API_ERROR_EVENT = "admin:api-error";
 export const ADMIN_SESSION_EXPIRED_EVENT = "admin:session-expired";
