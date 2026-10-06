@@ -1,8 +1,6 @@
 const configuredApiBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim();
 const API_BASE_URL = (
-  import.meta.env.DEV
-    ? configuredApiBaseUrl || ""
-    : "https://hotelbookingsite-mern.onrender.com"
+  configuredApiBaseUrl || "https://hotelbookingsite-mern.onrender.com"
 )
   .replace(/\/+$/, "")
   .replace(/\/api$/i, "");
