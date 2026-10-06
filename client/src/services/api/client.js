@@ -1,15 +1,8 @@
-const configuredApiBaseUrl = import.meta.env.VITE_API_BASE_URL;
-const defaultApiBaseUrl = import.meta.env.DEV
-  ? ""
-  : "https://hotelbookingsite-mern.onrender.com";
-const configuredApiUrlIsLocal =
-  /^https?:\/\/(localhost|127(?:\.\d{1,3}){3})(:\d+)?(?:\/|$)/i.test(
-    configuredApiBaseUrl?.trim() || ""
-  );
+const configuredApiBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim();
 const API_BASE_URL = (
-  configuredApiBaseUrl && !(import.meta.env.PROD && configuredApiUrlIsLocal)
-    ? configuredApiBaseUrl
-    : defaultApiBaseUrl
+  import.meta.env.DEV
+    ? configuredApiBaseUrl || ""
+    : "https://hotelbookingsite-mern.onrender.com"
 )
   .replace(/\/+$/, "")
   .replace(/\/api$/i, "");

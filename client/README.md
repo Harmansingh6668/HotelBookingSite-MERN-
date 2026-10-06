@@ -4,14 +4,13 @@ This template provides a minimal setup to get React working in Vite with HMR and
 
 ## Deployment API configuration
 
-Set `VITE_API_BASE_URL` in the Vercel project to the deployed backend's origin
-(for example, `https://your-backend.example.com`). Do not use `localhost`.
-The client accepts either the backend origin or the same origin followed by
-`/api`. Set `CORS_ORIGINS` on the backend to the exact frontend origin shown in
-Vercel (for example, `https://your-frontend.vercel.app`). For multiple frontend
-origins, separate them with commas. These values must be configured in the
-hosting providers' environment settings and the frontend must be redeployed
-after changing `VITE_API_BASE_URL`.
+Production builds use `https://hotelbookingsite-mern.onrender.com` directly, so
+the production API URL does not depend on Vercel environment-variable settings.
+During local development, `VITE_API_BASE_URL` can override the API origin; when
+unset, requests use the Vite `/api` proxy. Set `CORS_ORIGINS` on the backend to
+the exact frontend origin shown in Vercel (for example,
+`https://your-frontend.vercel.app`). For multiple frontend origins, separate
+them with commas.
 
 Currently, two official plugins are available:
 

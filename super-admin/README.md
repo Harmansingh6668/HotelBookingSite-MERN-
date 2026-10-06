@@ -1,5 +1,14 @@
 # React + Vite
 
+## Deployment API configuration
+
+Set `VITE_API_BASE_URL` in the Vercel project to
+`https://hotelbookingsite-mern.onrender.com` (optionally with `/api`). Set
+`CORS_ORIGINS` on the backend to the exact deployed frontend origin. Vite
+embeds environment variables at build time, so redeploy the frontend after
+changing this setting. Production builds default to the Render API and ignore a
+localhost API URL; local development defaults to `http://localhost:8080/api`.
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:
